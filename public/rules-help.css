@@ -1,0 +1,1 @@
+.rules-content .rule:nth-of-type(3)>div::after{content:"";display:block;width:min(100%,320px);aspect-ratio:320/118;margin-top:14px;background:url('./rules-links-example.svg') center/contain no-repeat}.rules-content .rule:nth-of-type(3){align-items:start}
