@@ -9,12 +9,14 @@ const STORAGE_LEVEL = 'tilo-current-level';
 const STORAGE_TUTORIAL = 'tilo-tutorial-seen';
 
 let levelNumber = Math.max(1, Number(localStorage.getItem(STORAGE_LEVEL) || 1));
-let level: Level = generateLevel(levelNumber);
+let variant = Date.now() >>> 0;
+let level: Level = generateLevel(levelNumber, variant);
 let grid: Grid = cloneGrid(level.initial);
 let selected: FilledValue = CIRCLE;
 let errors = 0;
 let hintsLeft = 3;
 let bonusHints = 0;
+let bonusOfferShown = false;
 let hintPosition: Position | null = null;
 let screen: 'home' | 'rules' | 'game' = 'home';
 
@@ -65,7 +67,7 @@ function renderRules() {
         <h2>Simple à apprendre.</h2>
         <div class="rule"><b>1</b><div><strong>Équilibre chaque ligne.</strong><span>Autant de ${symbol(CIRCLE)} que de ${symbol(DIAMOND)}.</span></div></div>
         <div class="rule"><b>2</b><div><strong>Jamais trois identiques.</strong><span>Ni horizontalement, ni verticalement.</span></div></div>
-        <div class="rule"><b>3</b><div><strong>Lis les liens.</strong><span><em>=</em> même symbole · <em>≠</em> symboles différents.</span></div></div>
+        <div class="rule"><b>3</b><div><strong>Lis les liens.</strong><span><span class="legend-link same-link">=</span> même symbole · <span class="legend-link different-link">×</span> symboles différents.</span></div></div>
       </div>
       <button class="primary" id="startBtn">J’ai compris</button>
     </main>`;
@@ -85,7 +87,8 @@ function constraintMarkup() {
     const horizontal = ar === br;
     const left = horizontal ? ((Math.min(ac, bc) + 1) / level.size) * 100 : ((ac + .5) / level.size) * 100;
     const top = horizontal ? ((ar + .5) / level.size) * 100 : ((Math.min(ar, br) + 1) / level.size) * 100;
-    return `<span class="constraint ${horizontal ? 'horizontal' : 'vertical'}" style="left:${left}%;top:${top}%" data-i="${i}">${constraint.type === 'same' ? '=' : '≠'}</span>`;
+    const same = constraint.type === 'same';
+    return `<span class="constraint ${horizontal ? 'horizontal' : 'vertical'} ${same ? 'same' : 'different'}" style="left:${left}%;top:${top}%" data-i="${i}" aria-label="${same ? 'même symbole' : 'symboles différents'}">${same ? '=' : '×'}</span>`;
   }).join('');
 }
 
@@ -190,15 +193,18 @@ function showToast(text: string) {
 }
 
 function showThirdErrorModal() {
+  const canOfferReward = !bonusOfferShown;
+  if (canOfferReward) bonusOfferShown = true;
+
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `
     <div class="modal-card">
       <div class="modal-symbol">!</div>
       <span class="eyebrow">3 ERREURS</span>
-      <h3>Besoin d’un coup de pouce ?</h3>
-      <p>Regarde une courte publicité pour obtenir un indice supplémentaire et continuer.</p>
-      <button class="reward-button" id="rewardBtn">▶ Obtenir un indice</button>
+      <h3>${canOfferReward ? 'Besoin d’un coup de pouce ?' : 'Nouvelle tentative ?'}</h3>
+      <p>${canOfferReward ? 'Regarde une courte publicité pour obtenir un indice supplémentaire et continuer.' : 'Le coup de pouce bonus a déjà été proposé sur cette grille.'}</p>
+      ${canOfferReward ? '<button class="reward-button" id="rewardBtn">▶ Obtenir un indice</button>' : ''}
       <button class="secondary" id="restartBtn">Recommencer le niveau</button>
     </div>`;
   document.body.appendChild(modal);
@@ -207,22 +213,25 @@ function showThirdErrorModal() {
     modal.remove();
     restartCurrentLevel();
   });
-  document.querySelector('#rewardBtn')?.addEventListener('click', async () => {
-    const btn = document.querySelector<HTMLButtonElement>('#rewardBtn')!;
-    btn.disabled = true;
-    btn.textContent = 'Chargement…';
-    const rewarded = await showRewardedHint();
-    if (!rewarded) {
-      btn.disabled = false;
-      btn.textContent = 'Pub indisponible';
-      return;
-    }
-    bonusHints++;
-    errors = 2;
-    modal.remove();
-    renderGame();
-    showToast('Indice supplémentaire débloqué.');
-  });
+
+  if (canOfferReward) {
+    document.querySelector('#rewardBtn')?.addEventListener('click', async () => {
+      const btn = document.querySelector<HTMLButtonElement>('#rewardBtn')!;
+      btn.disabled = true;
+      btn.textContent = 'Chargement…';
+      const rewarded = await showRewardedHint();
+      if (!rewarded) {
+        btn.disabled = false;
+        btn.textContent = 'Pub indisponible';
+        return;
+      }
+      bonusHints++;
+      errors = 2;
+      modal.remove();
+      renderGame();
+      showToast('Indice supplémentaire débloqué.');
+    });
+  }
 }
 
 function showWinModal() {
@@ -242,25 +251,35 @@ function showWinModal() {
     modal.remove();
     levelNumber++;
     localStorage.setItem(STORAGE_LEVEL, String(levelNumber));
-    loadLevel();
+    loadLevel(true);
   });
 }
 
+function newVariant() {
+  variant = (variant + 1 + (Date.now() & 0xffff)) >>> 0;
+}
+
 function restartCurrentLevel() {
+  newVariant();
+  level = generateLevel(levelNumber, variant);
   grid = cloneGrid(level.initial);
   errors = 0;
   hintsLeft = 3;
   bonusHints = 0;
+  bonusOfferShown = false;
   hintPosition = null;
+  selected = CIRCLE;
   renderGame();
 }
 
-function loadLevel() {
-  level = generateLevel(levelNumber);
+function loadLevel(forceNew = false) {
+  if (forceNew) newVariant();
+  level = generateLevel(levelNumber, variant);
   grid = cloneGrid(level.initial);
   errors = 0;
   hintsLeft = 3;
   bonusHints = 0;
+  bonusOfferShown = false;
   hintPosition = null;
   selected = CIRCLE;
   screen = 'game';
