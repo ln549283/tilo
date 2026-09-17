@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">KEITE</title>
+  <desc id="desc">Icône KEITE : carré violet arrondi, cercle blanc et losange vert.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9B5CFF"/>
+      <stop offset="0.5" stop-color="#7C3FF1"/>
+      <stop offset="1" stop-color="#6733D8"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#68EB78"/>
+      <stop offset="1" stop-color="#28C95A"/>
+    </linearGradient>
+    <radialGradient id="white" cx="38%" cy="28%" r="72%">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EEEAF7"/>
+    </radialGradient>
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="190%">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#3B239A" flood-opacity="0.35"/>
+    </filter>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="190%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#4020A3" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <rect x="36" y="36" width="440" height="440" rx="94" fill="url(#bg)" filter="url(#shadow)"/>
+  <circle cx="256" cy="174" r="72" fill="url(#white)" filter="url(#soft)"/>
+  <rect x="183" y="245" width="146" height="146" rx="32" transform="rotate(45 256 318)" fill="url(#green)" filter="url(#soft)"/>
+</svg>
