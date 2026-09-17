@@ -57,39 +57,31 @@ function renderHome() {
     </main>`;
 
   document.querySelector('#playBtn')?.addEventListener('click', () => {
-    if (localStorage.getItem(STORAGE_TUTORIAL)) {
-      screen = 'game';
-    } else {
-      rulesReturnScreen = 'game';
-      screen = 'rules';
-    }
+    if (localStorage.getItem(STORAGE_TUTORIAL)) screen = 'game';
+    else { rulesReturnScreen = 'game'; screen = 'rules'; }
     render();
   });
   document.querySelector('#rulesBtn')?.addEventListener('click', () => {
-    rulesReturnScreen = 'home';
-    screen = 'rules';
-    render();
+    rulesReturnScreen = 'home'; screen = 'rules'; render();
   });
 }
 
 function renderRules() {
   app.innerHTML = `
     <main class="screen rules-screen">
-      <button class="ghost-icon top-left" id="backBtn" aria-label="Retour">‹</button>
-      <div class="rules-content">
-        <span class="eyebrow">COMMENT JOUER</span>
+      <header class="rules-header">
+        <button class="ghost-icon" id="backBtn" aria-label="Retour">‹</button>
         <h2>Simple à apprendre.</h2>
-        <div class="rule"><b>1</b><div><strong>Équilibre chaque ligne.</strong><span>Autant de ${symbol(CIRCLE)} que de ${symbol(DIAMOND)} dans chaque ligne et chaque colonne.</span></div></div>
-        <div class="rule"><b>2</b><div><strong>Jamais trois symboles identiques à la suite.</strong><span>Ni horizontalement, ni verticalement.</span></div></div>
-        <div class="rule"><b>3</b><div><strong>Lis les liens.</strong><span><span class="legend-link same-link">=</span> même symbole · <span class="legend-link different-link">×</span> symboles différents.</span></div></div>
+      </header>
+      <div class="rules-content">
+        <div class="rule rule-1"><b>1</b><div><strong>Équilibre chaque ligne.</strong><span>Autant de ${symbol(CIRCLE)} que de ${symbol(DIAMOND)} dans chaque ligne et chaque colonne.</span></div><div class="rule-visual" aria-label="Exemple équilibré"></div></div>
+        <div class="rule rule-2"><b>2</b><div><strong>Jamais trois symboles identiques à la suite.</strong><span>Ni horizontalement, ni verticalement.</span></div><div class="rule-visual" aria-label="Exemple maximum deux identiques à la suite"></div></div>
+        <div class="rule rule-3"><b>3</b><div><strong>Lis les liens.</strong><span><span class="legend-link same-link">=</span> même symbole · <span class="legend-link different-link">×</span> symboles différents.</span></div><div class="rule-visual" aria-label="Exemples identique et différent"></div></div>
       </div>
-      <button class="primary" id="startBtn">${localStorage.getItem(STORAGE_TUTORIAL) ? 'Retour au jeu' : 'J’ai compris'}</button>
+      <button class="primary rules-return" id="startBtn">${localStorage.getItem(STORAGE_TUTORIAL) ? 'Retour au jeu' : 'J’ai compris'}</button>
     </main>`;
 
-  const returnFromRules = () => {
-    screen = rulesReturnScreen;
-    render();
-  };
+  const returnFromRules = () => { screen = rulesReturnScreen; render(); };
   document.querySelector('#backBtn')?.addEventListener('click', returnFromRules);
   document.querySelector('#startBtn')?.addEventListener('click', () => {
     localStorage.setItem(STORAGE_TUTORIAL, '1');
@@ -111,8 +103,7 @@ function constraintMarkup() {
 
 function renderQuickLegend() {
   if (levelNumber > 5) return '';
-  return `
-    <div class="quick-legend" aria-label="Rappel des symboles">
+  return `<div class="quick-legend" aria-label="Rappel des symboles">
       <div class="quick-legend-item">${symbol(CIRCLE)}<span>Cercle violet</span></div>
       <div class="quick-legend-item">${symbol(DIAMOND)}<span>Losange vert</span></div>
       <div class="quick-legend-item"><span class="legend-link same-link">=</span><span>Même</span></div>
@@ -138,33 +129,20 @@ function renderGame() {
           <button class="rules-mini" id="gameRulesBtn" aria-label="Règles">?</button>
         </div>
       </header>
-
       ${renderQuickLegend()}
-
-      <section class="board-wrap">
-        <div class="board" style="--size:${level.size}">${cells}${constraintMarkup()}</div>
-      </section>
-
+      <section class="board-wrap"><div class="board" style="--size:${level.size}">${cells}${constraintMarkup()}</div></section>
       <div class="selector" aria-label="Choisir un symbole">
         <button class="symbol-button ${selected === CIRCLE ? 'selected' : ''}" data-value="${CIRCLE}">${symbol(CIRCLE)}</button>
         <button class="symbol-button ${selected === DIAMOND ? 'selected' : ''}" data-value="${DIAMOND}">${symbol(DIAMOND)}</button>
         <button class="erase-button" id="eraseBtn" aria-label="Effacer">⌫</button>
       </div>
-
       <button class="hint-button" id="hintBtn"><span>💡</span><b>Indice</b><em>${hintsLeft}</em></button>
       <div id="toast" class="toast"></div>
     </main>`;
 
   document.querySelector('#homeBtn')?.addEventListener('click', () => { screen = 'home'; render(); });
-  document.querySelector('#gameRulesBtn')?.addEventListener('click', () => {
-    rulesReturnScreen = 'game';
-    screen = 'rules';
-    render();
-  });
-  document.querySelectorAll<HTMLButtonElement>('.symbol-button').forEach(btn => btn.addEventListener('click', () => {
-    selected = Number(btn.dataset.value) as FilledValue;
-    renderGame();
-  }));
+  document.querySelector('#gameRulesBtn')?.addEventListener('click', () => { rulesReturnScreen = 'game'; screen = 'rules'; render(); });
+  document.querySelectorAll<HTMLButtonElement>('.symbol-button').forEach(btn => btn.addEventListener('click', () => { selected = Number(btn.dataset.value) as FilledValue; renderGame(); }));
   document.querySelector('#eraseBtn')?.addEventListener('click', () => {
     selected = EMPTY as unknown as FilledValue;
     document.querySelectorAll('.symbol-button').forEach(x => x.classList.remove('selected'));
@@ -175,149 +153,34 @@ function renderGame() {
 }
 
 function playCell(button: HTMLButtonElement) {
-  const r = Number(button.dataset.r);
-  const c = Number(button.dataset.c);
-  const value = selected as number;
-
-  if (value === EMPTY) {
-    grid[r]![c] = EMPTY;
-    hintPosition = null;
-    renderGame();
-    return;
-  }
-
+  const r = Number(button.dataset.r), c = Number(button.dataset.c), value = selected as number;
+  if (value === EMPTY) { grid[r]![c] = EMPTY; hintPosition = null; renderGame(); return; }
   if (value !== level.solution[r]![c]) {
-    errors++;
-    navigator.vibrate?.([45, 30, 45]);
-    button.classList.add('wrong');
-    setTimeout(() => {
-      if (errors >= 3) showThirdErrorModal();
-      else renderGame();
-    }, 280);
-    return;
+    errors++; navigator.vibrate?.([45,30,45]); button.classList.add('wrong');
+    setTimeout(() => { if (errors >= 3) showThirdErrorModal(); else renderGame(); }, 280); return;
   }
-
-  grid[r]![c] = value as FilledValue;
-  hintPosition = null;
-  navigator.vibrate?.(18);
-
-  if (grid.every(row => row.every(v => v !== EMPTY)) && gridIsValid(grid, level.constraints, true)) {
-    setTimeout(showWinModal, 180);
-  } else {
-    renderGame();
-  }
+  grid[r]![c] = value as FilledValue; hintPosition = null; navigator.vibrate?.(18);
+  if (grid.every(row => row.every(v => v !== EMPTY)) && gridIsValid(grid, level.constraints, true)) setTimeout(showWinModal, 180);
+  else renderGame();
 }
 
 function useHint() {
-  if (hintsLeft <= 0) {
-    showToast('Plus d’indice disponible sur cette grille.');
-    return;
-  }
-
-  const hint = findHint(grid, level.constraints, level.solution);
-  if (!hint) return;
-  hintsLeft--;
-  hintPosition = hint.position;
-  renderGame();
-  setTimeout(() => showToast(hint.text), 0);
+  if (hintsLeft <= 0) { showToast('Plus d’indice disponible sur cette grille.'); return; }
+  const hint = findHint(grid, level.constraints, level.solution); if (!hint) return;
+  hintsLeft--; hintPosition = hint.position; renderGame(); setTimeout(() => showToast(hint.text), 0);
 }
-
-function showToast(text: string) {
-  const toast = document.querySelector<HTMLDivElement>('#toast');
-  if (!toast) return;
-  toast.textContent = text;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 3800);
-}
+function showToast(text: string) { const toast = document.querySelector<HTMLDivElement>('#toast'); if (!toast) return; toast.textContent = text; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3800); }
 
 function showThirdErrorModal() {
   const canOfferLastChance = !lastChanceUsed;
-  const modal = document.createElement('div');
-  modal.className = 'modal-backdrop';
-  modal.innerHTML = `
-    <div class="modal-card">
-      <div class="modal-symbol">!</div>
-      <span class="eyebrow">3 ERREURS</span>
-      <h3>${canOfferLastChance ? 'Besoin d’une dernière chance ?' : 'Cette tentative est terminée.'}</h3>
-      <p>${canOfferLastChance ? 'Regarde une courte publicité pour obtenir une erreur supplémentaire et continuer.' : 'Ta dernière chance a déjà été utilisée sur cette grille.'}</p>
-      ${canOfferLastChance ? '<button class="reward-button" id="rewardBtn">▶ Obtenir une dernière chance</button>' : ''}
-      <button class="secondary" id="restartBtn">Recommencer le niveau</button>
-    </div>`;
+  const modal = document.createElement('div'); modal.className='modal-backdrop';
+  modal.innerHTML=`<div class="modal-card"><div class="modal-symbol">!</div><span class="eyebrow">3 ERREURS</span><h3>${canOfferLastChance?'Besoin d’une dernière chance ?':'Cette tentative est terminée.'}</h3><p>${canOfferLastChance?'Regarde une courte publicité pour obtenir une erreur supplémentaire et continuer.':'Ta dernière chance a déjà été utilisée sur cette grille.'}</p>${canOfferLastChance?'<button class="reward-button" id="rewardBtn">▶ Obtenir une dernière chance</button>':''}<button class="secondary" id="restartBtn">Recommencer le niveau</button></div>`;
   document.body.appendChild(modal);
-
-  document.querySelector('#restartBtn')?.addEventListener('click', () => {
-    modal.remove();
-    restartCurrentLevel();
-  });
-
-  if (canOfferLastChance) {
-    document.querySelector('#rewardBtn')?.addEventListener('click', async () => {
-      const btn = document.querySelector<HTMLButtonElement>('#rewardBtn')!;
-      btn.disabled = true;
-      btn.textContent = 'Chargement…';
-      const rewarded = await showRewardedHint();
-      if (!rewarded) {
-        btn.disabled = false;
-        btn.textContent = 'Pub indisponible';
-        return;
-      }
-      lastChanceUsed = true;
-      errors = 2;
-      modal.remove();
-      renderGame();
-      showToast('Dernière chance activée : une erreur supplémentaire est permise.');
-    });
-  }
+  document.querySelector('#restartBtn')?.addEventListener('click',()=>{modal.remove();restartCurrentLevel();});
+  if(canOfferLastChance) document.querySelector('#rewardBtn')?.addEventListener('click',async()=>{const btn=document.querySelector<HTMLButtonElement>('#rewardBtn')!;btn.disabled=true;btn.textContent='Chargement…';const rewarded=await showRewardedHint();if(!rewarded){btn.disabled=false;btn.textContent='Pub indisponible';return;}lastChanceUsed=true;errors=2;modal.remove();renderGame();showToast('Dernière chance activée : une erreur supplémentaire est permise.');});
 }
-
-function showWinModal() {
-  navigator.vibrate?.([25, 35, 25]);
-  const modal = document.createElement('div');
-  modal.className = 'modal-backdrop win-backdrop';
-  modal.innerHTML = `
-    <div class="modal-card win-card">
-      <div class="success-mark">✓</div>
-      <span class="eyebrow">BIEN JOUÉ</span>
-      <h3>Niveau ${levelNumber} réussi !</h3>
-      <p>${errors === 0 ? 'Parfait. Aucune erreur.' : `${errors} erreur${errors > 1 ? 's' : ''}.`}</p>
-      <button class="primary" id="nextBtn">Niveau suivant</button>
-    </div>`;
-  document.body.appendChild(modal);
-  document.querySelector('#nextBtn')?.addEventListener('click', () => {
-    modal.remove();
-    levelNumber++;
-    localStorage.setItem(STORAGE_LEVEL, String(levelNumber));
-    loadLevel(true);
-  });
-}
-
-function newVariant() {
-  variant = (variant + 1 + (Date.now() & 0xffff)) >>> 0;
-}
-
-function restartCurrentLevel() {
-  newVariant();
-  level = generateLevel(levelNumber, variant);
-  grid = cloneGrid(level.initial);
-  errors = 0;
-  hintsLeft = 3;
-  lastChanceUsed = false;
-  hintPosition = null;
-  selected = CIRCLE;
-  renderGame();
-}
-
-function loadLevel(forceNew = false) {
-  if (forceNew) newVariant();
-  level = generateLevel(levelNumber, variant);
-  grid = cloneGrid(level.initial);
-  errors = 0;
-  hintsLeft = 3;
-  lastChanceUsed = false;
-  hintPosition = null;
-  selected = CIRCLE;
-  screen = 'game';
-  render();
-}
-
+function showWinModal(){navigator.vibrate?.([25,35,25]);const modal=document.createElement('div');modal.className='modal-backdrop win-backdrop';modal.innerHTML=`<div class="modal-card win-card"><div class="success-mark">✓</div><span class="eyebrow">BIEN JOUÉ</span><h3>Niveau ${levelNumber} réussi !</h3><p>${errors===0?'Parfait. Aucune erreur.':`${errors} erreur${errors>1?'s':''}.`}</p><button class="primary" id="nextBtn">Niveau suivant</button></div>`;document.body.appendChild(modal);document.querySelector('#nextBtn')?.addEventListener('click',()=>{modal.remove();levelNumber++;localStorage.setItem(STORAGE_LEVEL,String(levelNumber));loadLevel(true);});}
+function newVariant(){variant=(variant+1+(Date.now()&0xffff))>>>0;}
+function restartCurrentLevel(){newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;renderGame();}
+function loadLevel(forceNew=false){if(forceNew)newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;screen='game';render();}
 render();
