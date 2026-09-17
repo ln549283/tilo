@@ -47,15 +47,7 @@ function renderHome() {
     <main class="screen home-screen">
       <button class="ghost-icon top-right" id="rulesBtn" aria-label="Règles">?</button>
       <div class="brand-lockup">
-        <div class="keite-logo" aria-label="KEITE - Keep It Even">
-          <span class="logo-tile tile-a"></span>
-          <span class="logo-tile tile-b"></span>
-          <span class="logo-tile tile-c"></span>
-          <span class="logo-tile tile-d"></span>
-          <span class="piece circle logo-circle"></span>
-          <span class="piece diamond logo-diamond"></span>
-        </div>
-        <p class="brand-tagline">Keep It Even</p>
+        <img class="keite-wordmark" src="./keite-logo.svg" alt="KEITE — Keep It Even" />
       </div>
       <div class="home-bottom">
         <div class="current-level">Niveau ${levelNumber}</div>
