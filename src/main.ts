@@ -47,7 +47,7 @@ function renderHome() {
     <main class="screen home-screen">
       <button class="ghost-icon top-right" id="rulesBtn" aria-label="Règles">?</button>
       <div class="brand-lockup">
-        <img class="keite-wordmark" src="./keite-logo.svg?v=20260917-3" alt="KEITE — Keep It Even" />
+        <img class="keite-wordmark" src="./keite_logo_transparent.png?v=20260917-4" alt="KEITE — Keep It Even" />
       </div>
       <div class="home-bottom">
         <div class="current-level">Niveau ${levelNumber}</div>
