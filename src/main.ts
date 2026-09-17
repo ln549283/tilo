@@ -5,18 +5,24 @@ import { findHint } from './core/solver';
 import { gridIsValid } from './core/rules';
 import { initializeAds, showRewardedHint } from './ads';
 
-const STORAGE_LEVEL = 'tilo-current-level';
-const STORAGE_TUTORIAL = 'tilo-tutorial-seen';
+const STORAGE_LEVEL = 'keite-current-level';
+const STORAGE_TUTORIAL = 'keite-tutorial-seen';
+const LEGACY_STORAGE_LEVEL = 'tilo-current-level';
+const LEGACY_STORAGE_TUTORIAL = 'tilo-tutorial-seen';
 
-let levelNumber = Math.max(1, Number(localStorage.getItem(STORAGE_LEVEL) || 1));
+const storedLevel = localStorage.getItem(STORAGE_LEVEL) ?? localStorage.getItem(LEGACY_STORAGE_LEVEL);
+if (!localStorage.getItem(STORAGE_TUTORIAL) && localStorage.getItem(LEGACY_STORAGE_TUTORIAL)) {
+  localStorage.setItem(STORAGE_TUTORIAL, '1');
+}
+
+let levelNumber = Math.max(1, Number(storedLevel || 1));
 let variant = Date.now() >>> 0;
 let level: Level = generateLevel(levelNumber, variant);
 let grid: Grid = cloneGrid(level.initial);
 let selected: FilledValue = CIRCLE;
 let errors = 0;
 let hintsLeft = 3;
-let bonusHints = 0;
-let bonusOfferShown = false;
+let lastChanceUsed = false;
 let hintPosition: Position | null = null;
 let screen: 'home' | 'rules' | 'game' = 'home';
 
@@ -41,8 +47,8 @@ function renderHome() {
       <button class="ghost-icon top-right" id="rulesBtn" aria-label="Règles">?</button>
       <div class="brand-lockup">
         <div class="brand-symbols"><span class="piece circle hero-piece"></span><span class="piece diamond hero-piece"></span></div>
-        <h1>TILO</h1>
-        <p>Deux symboles. Une logique.</p>
+        <h1>KEITE</h1>
+        <p>Keep It Even</p>
       </div>
       <div class="home-bottom">
         <div class="current-level">Niveau ${levelNumber}</div>
@@ -65,8 +71,8 @@ function renderRules() {
       <div class="rules-content">
         <span class="eyebrow">COMMENT JOUER</span>
         <h2>Simple à apprendre.</h2>
-        <div class="rule"><b>1</b><div><strong>Équilibre chaque ligne.</strong><span>Autant de ${symbol(CIRCLE)} que de ${symbol(DIAMOND)}.</span></div></div>
-        <div class="rule"><b>2</b><div><strong>Jamais trois identiques.</strong><span>Ni horizontalement, ni verticalement.</span></div></div>
+        <div class="rule"><b>1</b><div><strong>Équilibre chaque ligne.</strong><span>Autant de ${symbol(CIRCLE)} que de ${symbol(DIAMOND)} dans chaque ligne et chaque colonne.</span></div></div>
+        <div class="rule"><b>2</b><div><strong>Jamais trois symboles identiques à la suite.</strong><span>Ni horizontalement, ni verticalement.</span></div></div>
         <div class="rule"><b>3</b><div><strong>Lis les liens.</strong><span><span class="legend-link same-link">=</span> même symbole · <span class="legend-link different-link">×</span> symboles différents.</span></div></div>
       </div>
       <button class="primary" id="startBtn">J’ai compris</button>
@@ -118,7 +124,7 @@ function renderGame() {
         <button class="erase-button" id="eraseBtn" aria-label="Effacer">⌫</button>
       </div>
 
-      <button class="hint-button" id="hintBtn"><span>💡</span><b>Indice</b><em>${hintsLeft + bonusHints}</em></button>
+      <button class="hint-button" id="hintBtn"><span>💡</span><b>Indice</b><em>${hintsLeft}</em></button>
       <div id="toast" class="toast"></div>
     </main>`;
 
@@ -171,14 +177,14 @@ function playCell(button: HTMLButtonElement) {
 }
 
 function useHint() {
-  if (hintsLeft + bonusHints <= 0) {
+  if (hintsLeft <= 0) {
     showToast('Plus d’indice disponible sur cette grille.');
     return;
   }
 
   const hint = findHint(grid, level.constraints, level.solution);
   if (!hint) return;
-  if (bonusHints > 0) bonusHints--; else hintsLeft--;
+  hintsLeft--;
   hintPosition = hint.position;
   renderGame();
   setTimeout(() => showToast(hint.text), 0);
@@ -193,18 +199,16 @@ function showToast(text: string) {
 }
 
 function showThirdErrorModal() {
-  const canOfferReward = !bonusOfferShown;
-  if (canOfferReward) bonusOfferShown = true;
-
+  const canOfferLastChance = !lastChanceUsed;
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `
     <div class="modal-card">
       <div class="modal-symbol">!</div>
       <span class="eyebrow">3 ERREURS</span>
-      <h3>${canOfferReward ? 'Besoin d’un coup de pouce ?' : 'Nouvelle tentative ?'}</h3>
-      <p>${canOfferReward ? 'Regarde une courte publicité pour obtenir un indice supplémentaire et continuer.' : 'Le coup de pouce bonus a déjà été proposé sur cette grille.'}</p>
-      ${canOfferReward ? '<button class="reward-button" id="rewardBtn">▶ Obtenir un indice</button>' : ''}
+      <h3>${canOfferLastChance ? 'Besoin d’une dernière chance ?' : 'Cette tentative est terminée.'}</h3>
+      <p>${canOfferLastChance ? 'Regarde une courte publicité pour obtenir une erreur supplémentaire et continuer.' : 'Ta dernière chance a déjà été utilisée sur cette grille.'}</p>
+      ${canOfferLastChance ? '<button class="reward-button" id="rewardBtn">▶ Obtenir une dernière chance</button>' : ''}
       <button class="secondary" id="restartBtn">Recommencer le niveau</button>
     </div>`;
   document.body.appendChild(modal);
@@ -214,7 +218,7 @@ function showThirdErrorModal() {
     restartCurrentLevel();
   });
 
-  if (canOfferReward) {
+  if (canOfferLastChance) {
     document.querySelector('#rewardBtn')?.addEventListener('click', async () => {
       const btn = document.querySelector<HTMLButtonElement>('#rewardBtn')!;
       btn.disabled = true;
@@ -225,11 +229,11 @@ function showThirdErrorModal() {
         btn.textContent = 'Pub indisponible';
         return;
       }
-      bonusHints++;
+      lastChanceUsed = true;
       errors = 2;
       modal.remove();
       renderGame();
-      showToast('Indice supplémentaire débloqué.');
+      showToast('Dernière chance activée : une erreur supplémentaire est permise.');
     });
   }
 }
@@ -265,8 +269,7 @@ function restartCurrentLevel() {
   grid = cloneGrid(level.initial);
   errors = 0;
   hintsLeft = 3;
-  bonusHints = 0;
-  bonusOfferShown = false;
+  lastChanceUsed = false;
   hintPosition = null;
   selected = CIRCLE;
   renderGame();
@@ -278,8 +281,7 @@ function loadLevel(forceNew = false) {
   grid = cloneGrid(level.initial);
   errors = 0;
   hintsLeft = 3;
-  bonusHints = 0;
-  bonusOfferShown = false;
+  lastChanceUsed = false;
   hintPosition = null;
   selected = CIRCLE;
   screen = 'game';
