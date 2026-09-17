@@ -25,13 +25,14 @@ let hintsLeft = 3;
 let lastChanceUsed = false;
 let hintPosition: Position | null = null;
 let screen: 'home' | 'rules' | 'game' = 'home';
+let rulesReturnScreen: 'home' | 'game' = 'home';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 initializeAds();
 
 function symbol(value: number) {
-  if (value === CIRCLE) return '<span class="piece circle" aria-label="cercle"></span>';
-  if (value === DIAMOND) return '<span class="piece diamond" aria-label="losange"></span>';
+  if (value === CIRCLE) return '<span class="piece circle" aria-label="cercle violet"></span>';
+  if (value === DIAMOND) return '<span class="piece diamond" aria-label="losange vert"></span>';
   return '';
 }
 
@@ -46,9 +47,15 @@ function renderHome() {
     <main class="screen home-screen">
       <button class="ghost-icon top-right" id="rulesBtn" aria-label="Règles">?</button>
       <div class="brand-lockup">
-        <div class="brand-symbols"><span class="piece circle hero-piece"></span><span class="piece diamond hero-piece"></span></div>
-        <h1>KEITE</h1>
-        <p>Keep It Even</p>
+        <div class="keite-logo" aria-label="KEITE - Keep It Even">
+          <span class="logo-tile tile-a"></span>
+          <span class="logo-tile tile-b"></span>
+          <span class="logo-tile tile-c"></span>
+          <span class="logo-tile tile-d"></span>
+          <span class="piece circle logo-circle"></span>
+          <span class="piece diamond logo-diamond"></span>
+        </div>
+        <p class="brand-tagline">Keep It Even</p>
       </div>
       <div class="home-bottom">
         <div class="current-level">Niveau ${levelNumber}</div>
@@ -58,10 +65,19 @@ function renderHome() {
     </main>`;
 
   document.querySelector('#playBtn')?.addEventListener('click', () => {
-    screen = localStorage.getItem(STORAGE_TUTORIAL) ? 'game' : 'rules';
+    if (localStorage.getItem(STORAGE_TUTORIAL)) {
+      screen = 'game';
+    } else {
+      rulesReturnScreen = 'game';
+      screen = 'rules';
+    }
     render();
   });
-  document.querySelector('#rulesBtn')?.addEventListener('click', () => { screen = 'rules'; render(); });
+  document.querySelector('#rulesBtn')?.addEventListener('click', () => {
+    rulesReturnScreen = 'home';
+    screen = 'rules';
+    render();
+  });
 }
 
 function renderRules() {
@@ -75,14 +91,17 @@ function renderRules() {
         <div class="rule"><b>2</b><div><strong>Jamais trois symboles identiques à la suite.</strong><span>Ni horizontalement, ni verticalement.</span></div></div>
         <div class="rule"><b>3</b><div><strong>Lis les liens.</strong><span><span class="legend-link same-link">=</span> même symbole · <span class="legend-link different-link">×</span> symboles différents.</span></div></div>
       </div>
-      <button class="primary" id="startBtn">J’ai compris</button>
+      <button class="primary" id="startBtn">${localStorage.getItem(STORAGE_TUTORIAL) ? 'Retour au jeu' : 'J’ai compris'}</button>
     </main>`;
 
-  document.querySelector('#backBtn')?.addEventListener('click', () => { screen = 'home'; render(); });
+  const returnFromRules = () => {
+    screen = rulesReturnScreen;
+    render();
+  };
+  document.querySelector('#backBtn')?.addEventListener('click', returnFromRules);
   document.querySelector('#startBtn')?.addEventListener('click', () => {
     localStorage.setItem(STORAGE_TUTORIAL, '1');
-    screen = 'game';
-    render();
+    returnFromRules();
   });
 }
 
@@ -98,6 +117,17 @@ function constraintMarkup() {
   }).join('');
 }
 
+function renderQuickLegend() {
+  if (levelNumber > 5) return '';
+  return `
+    <div class="quick-legend" aria-label="Rappel des symboles">
+      <div class="quick-legend-item">${symbol(CIRCLE)}<span>Cercle violet</span></div>
+      <div class="quick-legend-item">${symbol(DIAMOND)}<span>Losange vert</span></div>
+      <div class="quick-legend-item"><span class="legend-link same-link">=</span><span>Même</span></div>
+      <div class="quick-legend-item"><span class="legend-link different-link">×</span><span>Différent</span></div>
+    </div>`;
+}
+
 function renderGame() {
   const clueSet = new Set(level.initial.flatMap((row, r) => row.map((v, c) => v !== EMPTY ? `${r}:${c}` : '')));
   const cells = grid.flatMap((row, r) => row.map((value, c) => {
@@ -111,8 +141,13 @@ function renderGame() {
       <header class="game-header">
         <button class="ghost-icon" id="homeBtn" aria-label="Accueil">‹</button>
         <div><span>NIVEAU</span><strong>${levelNumber}</strong></div>
-        <div class="mistakes" aria-label="Erreurs">${[0,1,2].map(i => `<i class="mistake-dot ${i < errors ? 'used' : ''}"></i>`).join('')}</div>
+        <div class="header-actions">
+          <div class="mistakes" aria-label="Erreurs">${[0,1,2].map(i => `<i class="mistake-dot ${i < errors ? 'used' : ''}"></i>`).join('')}</div>
+          <button class="rules-mini" id="gameRulesBtn" aria-label="Règles">?</button>
+        </div>
       </header>
+
+      ${renderQuickLegend()}
 
       <section class="board-wrap">
         <div class="board" style="--size:${level.size}">${cells}${constraintMarkup()}</div>
@@ -129,6 +164,11 @@ function renderGame() {
     </main>`;
 
   document.querySelector('#homeBtn')?.addEventListener('click', () => { screen = 'home'; render(); });
+  document.querySelector('#gameRulesBtn')?.addEventListener('click', () => {
+    rulesReturnScreen = 'game';
+    screen = 'rules';
+    render();
+  });
   document.querySelectorAll<HTMLButtonElement>('.symbol-button').forEach(btn => btn.addEventListener('click', () => {
     selected = Number(btn.dataset.value) as FilledValue;
     renderGame();
