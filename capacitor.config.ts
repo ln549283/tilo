@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.nibylogames.tilo',
-  appName: 'TILO',
+  appId: 'com.nibylogames.keite',
+  appName: 'KEITE',
   webDir: 'dist',
   bundledWebRuntime: false,
 };
