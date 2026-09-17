@@ -54,9 +54,17 @@ function specFor(level: number) {
   return { size: 6 as const, clueRate: .22, constraints: 6, tier: 'deep' as const };
 }
 
-export function generateLevel(number: number): Level {
+function mixSeed(number: number, variant: number) {
+  let seed = (0x54494c4f ^ Math.imul(number, 0x9e3779b1) ^ Math.imul(variant + 1, 0x85ebca6b)) >>> 0;
+  seed ^= seed >>> 16;
+  seed = Math.imul(seed, 0x7feb352d) >>> 0;
+  seed ^= seed >>> 15;
+  return seed >>> 0;
+}
+
+export function generateLevel(number: number, variant = 0): Level {
   const spec = specFor(number);
-  const rng = new SeededRandom((0x54494c4f ^ Math.imul(number, 0x9e3779b1)) >>> 0);
+  const rng = new SeededRandom(mixSeed(number, variant));
 
   for (let attempt = 0; attempt < 40; attempt++) {
     const solution = makeSolution(spec.size, rng);
