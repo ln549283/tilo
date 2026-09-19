@@ -59,3 +59,23 @@
 /* Game controls: keep them visually attached to the board */
 .game-screen .selector{margin-top:72px;padding-top:0}
 @media(max-height:760px){.game-screen .selector{margin-top:36px;padding-top:0}}
+
+/* Home — validated KEITE direction */
+.home-screen{justify-content:flex-start;text-align:center;overflow:hidden;padding-left:24px;padding-right:24px}
+.home-decor{position:absolute;border-radius:50%;pointer-events:none;opacity:.55}
+.home-decor-purple{width:150px;height:150px;left:-88px;top:-52px;background:#eee8ff}
+.home-decor-green{width:130px;height:130px;right:-82px;top:150px;background:#e1faf0}
+.home-hero{margin-top:76px;position:relative;z-index:1}
+.home-hero .keite-wordmark{width:min(100%,300px);margin:0 auto}
+.home-hero p{max-width:310px;margin:18px auto 0;color:#7c7f91;font-size:13px;line-height:1.45}
+.home-progress{margin-top:42px;padding:22px 24px;border:1px solid #ececf3;border-radius:24px;background:#fff;text-align:left;box-shadow:0 8px 28px rgba(45,40,70,.045);display:grid;grid-template-columns:1fr auto;align-items:end}
+.home-progress-label{grid-column:1/-1;font-size:10px;letter-spacing:.13em;color:#989aa9;font-weight:900}
+.home-progress strong{font-size:52px;line-height:1;margin-top:8px;letter-spacing:-.06em;color:#22243a}
+.home-infinite{align-self:end;margin-bottom:5px;color:#7c4dff;font-size:12px;font-weight:800}
+.home-play{margin-top:18px;height:62px;font-size:18px;border-radius:20px}.home-play span{font-size:14px;margin-right:8px}
+.home-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.home-action{min-height:82px;border:1px solid #ececf3;border-radius:20px;background:#fff;padding:13px;display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:9px;text-align:left;color:#27293b;cursor:pointer}
+.home-action-icon{width:38px;height:38px;border-radius:13px;background:#eee9ff;color:#7042ef;display:grid;place-items:center;font-size:19px;font-weight:950}
+.home-action b{display:block;font-size:13px}.home-action small{display:block;margin-top:3px;color:#989aa8;font-size:9.5px}.home-action i{font-style:normal;font-size:25px;color:#77798a}
+.home-action-muted{opacity:.62;cursor:default}.home-studio{margin-top:auto;padding-top:22px;color:#a5a7b1;font-size:10px;letter-spacing:.04em}
+@media(max-height:760px){.home-hero{margin-top:38px}.home-hero .keite-wordmark{width:min(100%,250px)}.home-hero p{margin-top:10px}.home-progress{margin-top:24px;padding:17px 20px}.home-progress strong{font-size:44px}.home-play{height:56px}.home-actions{margin-top:10px}.home-action{min-height:70px}.home-studio{padding-top:12px}}
