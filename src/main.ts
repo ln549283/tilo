@@ -162,24 +162,20 @@ function renderGame() {
         </div>
       </header>
       ${renderQuickLegend()}
+      <div class="game-objective">Équilibre la grille</div>
       <section class="board-wrap"><div class="board" style="--size:${level.size}">${cells}${constraintMarkup()}</div></section>
       <div class="selector" aria-label="Choisir un symbole">
-        <button class="symbol-button ${selected === CIRCLE ? 'selected' : ''}" data-value="${CIRCLE}">${symbol(CIRCLE)}</button>
-        <button class="symbol-button ${selected === DIAMOND ? 'selected' : ''}" data-value="${DIAMOND}">${symbol(DIAMOND)}</button>
-        <button class="erase-button" id="eraseBtn" aria-label="Effacer">⌫</button>
+        <button class="symbol-button circle-choice ${selected === CIRCLE ? 'selected' : ''}" data-value="${CIRCLE}">${symbol(CIRCLE)}</button>
+        <button class="symbol-button diamond-choice ${selected === DIAMOND ? 'selected' : ''}" data-value="${DIAMOND}">${symbol(DIAMOND)}</button>
       </div>
-      <button class="hint-button" id="hintBtn"><span>💡</span><b>Indice</b><em>${hintsLeft}</em></button>
+      <button class="hint-button" id="hintBtn"><span class="hint-bulb">💡</span><b>Indice</b><em>${hintsLeft}</em></button>
+      <div class="balance-reminder">Autant de ${symbol(CIRCLE)} que de ${symbol(DIAMOND)} dans chaque ligne et chaque colonne.</div>
       <div id="toast" class="toast"></div>
     </main>`;
 
   document.querySelector('#homeBtn')?.addEventListener('click', () => { screen = 'home'; render(); });
   document.querySelector('#gameRulesBtn')?.addEventListener('click', () => { rulesReturnScreen = 'game'; screen = 'rules'; render(); });
   document.querySelectorAll<HTMLButtonElement>('.symbol-button').forEach(btn => btn.addEventListener('click', () => { selected = Number(btn.dataset.value) as FilledValue; renderGame(); }));
-  document.querySelector('#eraseBtn')?.addEventListener('click', () => {
-    selected = EMPTY as unknown as FilledValue;
-    document.querySelectorAll('.symbol-button').forEach(x => x.classList.remove('selected'));
-    document.querySelector('#eraseBtn')?.classList.add('selected');
-  });
   document.querySelectorAll<HTMLButtonElement>('.cell:not(.fixed)').forEach(btn => btn.addEventListener('click', () => playCell(btn)));
   document.querySelector('#hintBtn')?.addEventListener('click', useHint);
 }
