@@ -59,6 +59,7 @@ function playSound(kind:'tap'|'place'|'error'|'hint'|'win'|'lose') {
 let gameStartedAt = Date.now();
 let hintsUsedThisGame = 0;
 function difficultyFor(n:number):Difficulty { if(n<=10)return 'Facile'; if(n<=30)return 'Moyen'; if(n<=50)return 'Difficile'; if(n<=69)return 'Extrême'; return 'Chrono'; }
+function difficultyClass(n:number){ return `difficulty-${difficultyFor(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}`; }
 function readStats():StatsData { try { const v=JSON.parse(localStorage.getItem(STORAGE_STATS)||''); if(v?.games) return v; } catch {} return {games:[],currentPerfectStreak:0,maxPerfectStreak:0}; }
 function saveWinStat(){
   const s=readStats(); const perfect=errors===0;
@@ -103,12 +104,18 @@ function renderHome() {
       <div class="home-decor home-decor-green"></div>
       <div class="home-hero">
         <img class="keite-wordmark" src="./keite_logo_transparent.png?v=20260917-4" alt="KEITE — Keep It Even" />
-        <p>Un puzzle de logique. Simple à comprendre, difficile à lâcher.</p>
+        <p>Simple à comprendre. Difficile à lâcher.</p>
       </div>
       <section class="home-progress home-level-card">
-        <span class="home-progress-label">NIVEAU ACTUEL</span>
-        <strong>${levelNumber}</strong>
-        <span class="home-difficulty">● ${difficultyFor(levelNumber)}</span>
+        <div class="home-level-copy">
+          <span class="home-progress-label">NIVEAU ACTUEL</span>
+          <strong>${levelNumber}</strong>
+          <span class="home-difficulty ${difficultyClass(levelNumber)}"><i></i>${difficultyFor(levelNumber)}</span>
+        </div>
+        <div class="home-mini-grid" aria-hidden="true">
+          <span>${symbol(CIRCLE)}</span><span>${symbol(DIAMOND)}</span>
+          <span>${symbol(DIAMOND)}</span><span>${symbol(CIRCLE)}</span>
+        </div>
       </section>
       <button class="primary home-play" id="playBtn"><span>▶</span> Jouer</button>
       <div class="home-actions">
@@ -279,16 +286,6 @@ function constraintMarkup() {
   }).join('');
 }
 
-function renderQuickLegend() {
-  if (levelNumber > 5) return '';
-  return `<div class="quick-legend" aria-label="Rappel des symboles">
-      <div class="quick-legend-item">${symbol(CIRCLE)}<span>Cercle violet</span></div>
-      <div class="quick-legend-item">${symbol(DIAMOND)}<span>Losange vert</span></div>
-      <div class="quick-legend-item"><span class="legend-link same-link">=</span><span>Même</span></div>
-      <div class="quick-legend-item"><span class="legend-link different-link">×</span><span>Différent</span></div>
-    </div>`;
-}
-
 function renderGame() {
   const clueSet = new Set(level.initial.flatMap((row, r) => row.map((v, c) => v !== EMPTY ? `${r}:${c}` : '')));
   const cells = grid.flatMap((row, r) => row.map((value, c) => {
@@ -307,8 +304,7 @@ function renderGame() {
           <button class="rules-mini" id="gameRulesBtn" aria-label="Règles">?</button>
         </div>
       </header>
-      ${renderQuickLegend()}
-      <div class="game-objective difficulty-pill"><span></span>${difficultyFor(levelNumber)}</div>
+      <div class="game-objective difficulty-pill ${difficultyClass(levelNumber)}"><span></span>${difficultyFor(levelNumber)}</div>
       <section class="board-wrap"><div class="board" style="--size:${level.size}">${cells}${constraintMarkup()}</div></section>
       <div class="selector" aria-label="Choisir un symbole">
         <button class="symbol-button circle-choice ${selected === CIRCLE ? 'selected' : ''}" data-value="${CIRCLE}">${symbol(CIRCLE)}</button>
