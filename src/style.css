@@ -148,3 +148,74 @@
 /* About */
 .about-screen{justify-content:flex-start;overflow:hidden}.about-header{height:44px}.about-logo{width:min(100%,285px);margin:35px auto 0}.about-version{text-align:center;color:#777b98;font-size:12px;margin-top:8px}.about-card{margin-top:24px;padding:20px;border:1px solid #ececf3;border-radius:22px;background:#fff;box-shadow:0 6px 20px rgba(45,40,70,.04);text-align:left}.about-card h2{font-size:17px;margin:0 0 11px}.about-card p{font-size:12px;line-height:1.55;color:#676b86;margin:0}.about-features{display:flex;flex-direction:column;gap:11px;margin-top:18px;color:#5f6380;font-size:11px}.about-features span{display:flex;align-items:center;gap:10px}.about-features b{width:23px;color:#7c4dff;font-size:18px;text-align:center}.developer-card{display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:center;margin-top:14px}.about-gamepad{width:48px;height:48px;border-radius:15px;background:#eee9ff;display:grid;place-items:center;font-size:22px}.developer-card b{font-size:13px}.developer-card small{display:block;margin-top:4px;color:#898c9e;font-size:10px}.about-return{margin-top:auto;margin-bottom:18px;padding:15px;font-size:14px}
 @media(max-width:380px){.home-actions{gap:5px}.home-action{padding:7px 2px}.home-action b{font-size:9.5px}.home-action small{display:none}}
+
+
+/* 2026-09-19 — validated mobile layout */
+html,body,#app{height:100%;min-height:100%;overflow:hidden}
+body{height:100dvh;min-height:100dvh}
+.screen{height:100dvh;min-height:0;max-height:100dvh;overflow:hidden}
+
+/* Home: same direction, denser composition */
+.home-screen{padding-top:max(18px,env(safe-area-inset-top));padding-bottom:max(18px,env(safe-area-inset-bottom))}
+.home-hero{margin-top:48px}
+.home-hero .keite-wordmark{width:min(100%,285px)}
+.home-hero p{margin:12px auto 0;font-size:14px;line-height:1.35;color:#747789}
+.home-progress{margin-top:28px;padding:20px 22px;display:grid;grid-template-columns:1fr 128px;gap:18px;align-items:center}
+.home-level-copy{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.home-progress-label{font-size:10px;letter-spacing:.13em}
+.home-progress strong{font-size:54px;margin-top:7px}
+.home-difficulty{margin-top:10px;margin-bottom:0;align-self:flex-start;display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:999px;font-size:12px;font-weight:850}
+.home-difficulty i,.difficulty-pill>span{display:block;width:9px;height:9px;border-radius:50%;background:currentColor}
+.home-mini-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;width:118px;height:118px}
+.home-mini-grid>span{display:grid;place-items:center;border-radius:14px;background:#f3f2f7}
+.home-mini-grid .piece{width:31px;height:31px}
+.home-play{margin-top:16px}
+.home-actions{margin-top:12px}
+.home-studio{padding-top:14px}
+.difficulty-facile{color:#169967;background:#eaf9f2}
+.difficulty-moyen{color:#356fe5;background:#edf3ff}
+.difficulty-difficile{color:#d96a20;background:#fff2e8}
+.difficulty-extreme{color:#e34557;background:#ffedf0}
+.difficulty-chrono{color:#7042ef;background:#f0ebff}
+
+/* Game: remove onboarding legend and keep everything inside one viewport */
+.game-screen{padding-top:max(18px,env(safe-area-inset-top));padding-bottom:max(14px,env(safe-area-inset-bottom))}
+.game-objective{margin-top:10px;padding:7px 20px;background:transparent}
+.board-wrap{margin:22px 0 0;padding:0}
+.board{width:min(88vw,390px)}
+.game-screen .selector{margin-top:auto;padding-top:18px}
+.hint-button{margin-top:10px}
+.balance-reminder{margin-top:9px}
+
+/* Rules: breathe without scrolling */
+.rules-screen{overflow:hidden!important;padding-top:max(18px,env(safe-area-inset-top));padding-bottom:max(18px,env(safe-area-inset-bottom))}
+.rules-header{margin-bottom:24px}
+.rules-content{gap:18px}
+.rule-card{padding:20px 17px;gap:11px 14px}
+.rules-return{margin-top:24px!important;margin-bottom:0!important}
+@media(max-height:780px){
+  .rules-header{margin-bottom:14px}
+  .rules-content{gap:10px}
+  .rule-card{padding:12px 13px;gap:7px 10px}
+  .balance-demo{padding:9px}.demo-cell{width:40px;height:40px}.demo-cell .piece{width:23px;height:23px}
+  .mini-demo{padding:8px 6px}.mini-demo .demo-cell{width:33px;height:33px}.mini-demo .demo-cell .piece{width:19px;height:19px}
+  .link-demo{padding:8px 5px}.link-demo .piece{width:24px;height:24px}
+  .rules-return{margin-top:12px!important;padding:12px 16px}
+}
+
+/* No internal scrolling on secondary pages */
+.stats-screen,.settings-screen,.about-screen{overflow:hidden}
+.stats-scroll{overflow:hidden;min-height:0}
+@media(max-height:780px){
+  .home-hero{margin-top:24px}
+  .home-progress{margin-top:18px;padding:15px 18px;grid-template-columns:1fr 104px}
+  .home-mini-grid{width:96px;height:96px;gap:6px}
+  .home-mini-grid>span{border-radius:12px}.home-mini-grid .piece{width:25px;height:25px}
+  .home-progress strong{font-size:44px}
+  .home-play{height:54px}
+  .home-actions{margin-top:9px}.home-action{min-height:66px}
+  .home-studio{padding-top:8px}
+  .board-wrap{margin-top:12px}
+  .game-screen .selector{padding-top:10px}
+  .balance-reminder{font-size:9px;margin-top:6px}
+}
