@@ -46,7 +46,7 @@ workflows:
       node: 22
       java: 21
       android_signing:
-        - keite_keystore
+        - whichly-upload
       groups:
         - keite_android
       vars:
