@@ -24,12 +24,37 @@ let errors = 0;
 let hintsLeft = 3;
 let lastChanceUsed = false;
 let hintPosition: Position | null = null;
-let screen: 'home' | 'rules' | 'game' | 'stats' = 'home';
+let screen: 'home' | 'rules' | 'game' | 'stats' | 'settings' = 'home';
 
 type Difficulty = 'Facile' | 'Moyen' | 'Difficile' | 'Extrême' | 'Chrono';
 type GameStat = { level:number; difficulty:Difficulty; errors:number; hints:number; seconds:number; date:string };
 type StatsData = { games:GameStat[]; currentPerfectStreak:number; maxPerfectStreak:number };
 const STORAGE_STATS = 'keite-stats-v1';
+const STORAGE_SOUND = 'keite-sound-enabled';
+let soundEnabled = localStorage.getItem(STORAGE_SOUND) !== '0';
+let audioContext: AudioContext | null = null;
+
+function tone(frequency:number, duration=.07, volume=.035, type:OscillatorType='sine', delay=0) {
+  if (!soundEnabled) return;
+  try {
+    audioContext ??= new AudioContext();
+    const ctx=audioContext, osc=ctx.createOscillator(), gain=ctx.createGain();
+    osc.type=type; osc.frequency.value=frequency;
+    gain.gain.setValueAtTime(0.0001,ctx.currentTime+delay);
+    gain.gain.exponentialRampToValueAtTime(volume,ctx.currentTime+delay+.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+delay+duration);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(ctx.currentTime+delay); osc.stop(ctx.currentTime+delay+duration+.02);
+  } catch {}
+}
+function playSound(kind:'tap'|'place'|'error'|'hint'|'win'|'lose') {
+  if(kind==='tap') tone(420,.035,.018,'sine');
+  if(kind==='place') tone(620,.055,.025,'sine');
+  if(kind==='error'){tone(180,.09,.035,'triangle');tone(145,.1,.025,'triangle',.07);}
+  if(kind==='hint'){tone(760,.07,.025,'sine');tone(980,.1,.025,'sine',.07);}
+  if(kind==='win'){tone(523,.09,.03,'sine');tone(659,.09,.03,'sine',.1);tone(784,.16,.035,'sine',.2);}
+  if(kind==='lose'){tone(260,.1,.03,'triangle');tone(205,.13,.03,'triangle',.11);}
+}
 let gameStartedAt = Date.now();
 let hintsUsedThisGame = 0;
 function difficultyFor(n:number):Difficulty { if(n<=10)return 'Facile'; if(n<=30)return 'Moyen'; if(n<=50)return 'Difficile'; if(n<=69)return 'Extrême'; return 'Chrono'; }
@@ -58,6 +83,7 @@ function render() {
   if (screen === 'home') return renderHome();
   if (screen === 'rules') return renderRules();
   if (screen === 'stats') return renderStats();
+  if (screen === 'settings') return renderSettings();
   return renderGame();
 }
 
@@ -83,6 +109,9 @@ function renderHome() {
         <button class="home-action" id="rulesBtn" type="button">
           <span class="home-action-icon">?</span><span><b>Règles</b><small>Comment jouer</small></span><i>›</i>
         </button>
+        <button class="home-action home-settings-link" id="settingsBtn" type="button">
+          <span class="home-action-icon">⚙</span><span><b>Paramètres</b><small>Son et préférences</small></span><i>›</i>
+        </button>
       </div>
       <small class="home-studio">Nibylo Games</small>
     </main>`;
@@ -92,12 +121,36 @@ function renderHome() {
     else { rulesReturnScreen = 'game'; screen = 'rules'; }
     render();
   });
-  document.querySelector('#statsBtn')?.addEventListener('click', () => { screen = 'stats'; render(); });
+  document.querySelector('#statsBtn')?.addEventListener('click', () => { playSound('tap'); screen = 'stats'; render(); });
+  document.querySelector('#settingsBtn')?.addEventListener('click', () => { playSound('tap'); screen = 'settings'; render(); });
   document.querySelector('#rulesBtn')?.addEventListener('click', () => {
     rulesReturnScreen = 'home'; screen = 'rules'; render();
   });
 }
 
+
+function renderSettings() {
+  app.innerHTML=`
+    <main class="screen settings-screen">
+      <header class="settings-header"><button class="ghost-icon" id="settingsBack" aria-label="Retour">‹</button><div><h2>Paramètres</h2><p>Personnalisez votre expérience.</p></div></header>
+      <section class="settings-list">
+        <div class="setting-row">
+          <div class="setting-icon">♪</div>
+          <div class="setting-copy"><b>Effets sonores</b><span>Sons des placements, indices et résultats</span></div>
+          <button class="switch ${soundEnabled?'on':''}" id="soundToggle" role="switch" aria-checked="${soundEnabled}"><i></i></button>
+        </div>
+        <div class="setting-note"><b>KEITE reste discret.</b><span>Pas de musique de fond : uniquement de courts effets sonores pendant la partie.</span></div>
+      </section>
+      <button class="primary settings-return" id="settingsReturn">← &nbsp; Retour à l’accueil</button>
+    </main>`;
+  const back=()=>{playSound('tap');screen='home';render();};
+  document.querySelector('#settingsBack')?.addEventListener('click',back);
+  document.querySelector('#settingsReturn')?.addEventListener('click',back);
+  document.querySelector('#soundToggle')?.addEventListener('click',()=>{
+    soundEnabled=!soundEnabled; localStorage.setItem(STORAGE_SOUND,soundEnabled?'1':'0');
+    if(soundEnabled) playSound('hint'); renderSettings();
+  });
+}
 
 function renderStats() {
   const s=readStats(), games=s.games, wins=games.length, perfect=games.filter(g=>g.errors===0).length;
@@ -247,10 +300,10 @@ function playCell(button: HTMLButtonElement) {
   const r = Number(button.dataset.r), c = Number(button.dataset.c), value = selected as number;
   if (value === EMPTY) { grid[r]![c] = EMPTY; hintPosition = null; renderGame(); return; }
   if (value !== level.solution[r]![c]) {
-    errors++; navigator.vibrate?.([45,30,45]); button.classList.add('wrong');
+    playSound('error'); errors++; navigator.vibrate?.([45,30,45]); button.classList.add('wrong');
     setTimeout(() => { if (errors >= 3) showThirdErrorModal(); else renderGame(); }, 280); return;
   }
-  grid[r]![c] = value as FilledValue; hintPosition = null; navigator.vibrate?.(18);
+  grid[r]![c] = value as FilledValue; hintPosition = null; playSound('place'); navigator.vibrate?.(18);
   if (grid.every(row => row.every(v => v !== EMPTY)) && gridIsValid(grid, level.constraints, true)) setTimeout(showWinModal, 180);
   else renderGame();
 }
@@ -258,11 +311,12 @@ function playCell(button: HTMLButtonElement) {
 function useHint() {
   if (hintsLeft <= 0) { showToast('Plus d’indice disponible sur cette grille.'); return; }
   const hint = findHint(grid, level.constraints, level.solution); if (!hint) return;
-  hintsLeft--; hintsUsedThisGame++; hintPosition = hint.position; renderGame(); setTimeout(() => showToast(hint.text), 0);
+  hintsLeft--; hintsUsedThisGame++; playSound('hint'); hintPosition = hint.position; renderGame(); setTimeout(() => showToast(hint.text), 0);
 }
 function showToast(text: string) { const toast = document.querySelector<HTMLDivElement>('#toast'); if (!toast) return; toast.textContent = text; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3800); }
 
 function showThirdErrorModal() {
+  playSound('lose');
   const canOfferLastChance = !lastChanceUsed;
   const modal = document.createElement('div'); modal.className='modal-backdrop';
   modal.innerHTML=`<div class="modal-card"><div class="modal-symbol">!</div><span class="eyebrow">3 ERREURS</span><h3>${canOfferLastChance?'Besoin d’une dernière chance ?':'Cette tentative est terminée.'}</h3><p>${canOfferLastChance?'Regarde une courte publicité pour obtenir une erreur supplémentaire et continuer.':'Ta dernière chance a déjà été utilisée sur cette grille.'}</p>${canOfferLastChance?'<button class="reward-button" id="rewardBtn">▶ Obtenir une dernière chance</button>':''}<button class="secondary" id="restartBtn">Recommencer le niveau</button></div>`;
@@ -270,7 +324,7 @@ function showThirdErrorModal() {
   document.querySelector('#restartBtn')?.addEventListener('click',()=>{modal.remove();restartCurrentLevel();});
   if(canOfferLastChance) document.querySelector('#rewardBtn')?.addEventListener('click',async()=>{const btn=document.querySelector<HTMLButtonElement>('#rewardBtn')!;btn.disabled=true;btn.textContent='Chargement…';const rewarded=await showRewardedHint();if(!rewarded){btn.disabled=false;btn.textContent='Pub indisponible';return;}lastChanceUsed=true;errors=2;modal.remove();renderGame();showToast('Dernière chance activée : une erreur supplémentaire est permise.');});
 }
-function showWinModal(){saveWinStat();navigator.vibrate?.([25,35,25]);const modal=document.createElement('div');modal.className='modal-backdrop win-backdrop';modal.innerHTML=`<div class="modal-card win-card"><div class="success-mark">✓</div><span class="eyebrow">BIEN JOUÉ</span><h3>Niveau ${levelNumber} réussi !</h3><p>${errors===0?'Parfait. Aucune erreur.':`${errors} erreur${errors>1?'s':''}.`}</p><button class="primary" id="nextBtn">Niveau suivant</button></div>`;document.body.appendChild(modal);document.querySelector('#nextBtn')?.addEventListener('click',()=>{modal.remove();levelNumber++;localStorage.setItem(STORAGE_LEVEL,String(levelNumber));loadLevel(true);});}
+function showWinModal(){saveWinStat();playSound('win');navigator.vibrate?.([25,35,25]);const modal=document.createElement('div');modal.className='modal-backdrop win-backdrop';modal.innerHTML=`<div class="modal-card win-card"><div class="success-mark">✓</div><span class="eyebrow">BIEN JOUÉ</span><h3>Niveau ${levelNumber} réussi !</h3><p>${errors===0?'Parfait. Aucune erreur.':`${errors} erreur${errors>1?'s':''}.`}</p><button class="primary" id="nextBtn">Niveau suivant</button></div>`;document.body.appendChild(modal);document.querySelector('#nextBtn')?.addEventListener('click',()=>{modal.remove();levelNumber++;localStorage.setItem(STORAGE_LEVEL,String(levelNumber));loadLevel(true);});}
 function newVariant(){variant=(variant+1+(Date.now()&0xffff))>>>0;}
 function restartCurrentLevel(){gameStartedAt=Date.now();hintsUsedThisGame=0;newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;renderGame();}
 function loadLevel(forceNew=false){gameStartedAt=Date.now();hintsUsedThisGame=0;if(forceNew)newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;screen='game';render();}
