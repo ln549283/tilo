@@ -1,0 +1,86 @@
+workflows:
+  keite-android-debug:
+    name: KEITE Android Debug
+    max_build_duration: 60
+    environment:
+      ubuntu: 24.04
+      node: 22
+      java: 21
+      vars:
+        APP_VERSION: "1.0.0"
+        ADMOB_ANDROID_APP_ID: "ca-app-pub-3940256099942544~3347511713"
+        VITE_ADMOB_REWARDED_ANDROID: "ca-app-pub-3940256099942544/5224354917"
+    scripts:
+      - name: Install dependencies
+        script: npm install
+      - name: Build web app
+        script: npm run build
+      - name: Create and sync Android project
+        script: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+      - name: Configure Android release settings
+        script: node scripts/prepare-android.mjs
+      - name: Generate Android icons and splash
+        script: |
+          mkdir -p assets
+          cp public/keite-icon.svg assets/logo.svg
+          npx capacitor-assets generate --android --assetPath assets             --iconBackgroundColor "#fbfbfd"             --iconBackgroundColorDark "#fbfbfd"             --splashBackgroundColor "#fbfbfd"             --splashBackgroundColorDark "#fbfbfd"
+      - name: Set Android SDK location
+        script: echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/android/local.properties"
+      - name: Build debug APK
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/**/*.apk
+
+  keite-android-release:
+    name: KEITE Android Release
+    max_build_duration: 60
+    environment:
+      ubuntu: 24.04
+      node: 22
+      java: 21
+      android_signing:
+        - keite_keystore
+      groups:
+        - keite_android
+      vars:
+        PACKAGE_NAME: "com.nibylogames.keite"
+        APP_VERSION: "1.0.0"
+    scripts:
+      - name: Validate release secrets
+        script: |
+          : "${ADMOB_ANDROID_APP_ID:?Missing ADMOB_ANDROID_APP_ID in Codemagic group keite_android}"
+          : "${VITE_ADMOB_REWARDED_ANDROID:?Missing VITE_ADMOB_REWARDED_ANDROID in Codemagic group keite_android}"
+      - name: Install dependencies
+        script: npm install
+      - name: Build web app
+        script: npm run build
+      - name: Create and sync Android project
+        script: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+      - name: Configure Android release settings
+        script: node scripts/prepare-android.mjs
+      - name: Generate Android icons and splash
+        script: |
+          mkdir -p assets
+          cp public/keite-icon.svg assets/logo.svg
+          npx capacitor-assets generate --android --assetPath assets             --iconBackgroundColor "#fbfbfd"             --iconBackgroundColorDark "#fbfbfd"             --splashBackgroundColor "#fbfbfd"             --splashBackgroundColorDark "#fbfbfd"
+      - name: Set Android SDK location
+        script: echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/android/local.properties"
+      - name: Build signed Android App Bundle
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/**/*.aab
+      - android/app/build/outputs/**/*.apk
