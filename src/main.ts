@@ -72,6 +72,13 @@ function formatTime(seconds:number){const m=Math.floor(seconds/60),s=seconds%60;
 let rulesReturnScreen: 'home' | 'game' = 'home';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(error => console.warn('Service worker registration failed', error));
+  });
+}
+
 initializeAds();
 
 function symbol(value: number) {
