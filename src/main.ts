@@ -45,15 +45,27 @@ function render() {
 function renderHome() {
   app.innerHTML = `
     <main class="screen home-screen">
-      <button class="ghost-icon top-right" id="rulesBtn" aria-label="Règles">?</button>
-      <div class="brand-lockup">
+      <div class="home-decor home-decor-purple"></div>
+      <div class="home-decor home-decor-green"></div>
+      <div class="home-hero">
         <img class="keite-wordmark" src="./keite_logo_transparent.png?v=20260917-4" alt="KEITE — Keep It Even" />
+        <p>Un puzzle de logique. Simple à comprendre, difficile à lâcher.</p>
       </div>
-      <div class="home-bottom">
-        <div class="current-level">Niveau ${levelNumber}</div>
-        <button class="primary" id="playBtn">Jouer</button>
-        <small>Nibylo Games</small>
+      <section class="home-progress">
+        <span class="home-progress-label">NIVEAU ACTUEL</span>
+        <strong>${levelNumber}</strong>
+        <span class="home-infinite">Progression infinie ∞</span>
+      </section>
+      <button class="primary home-play" id="playBtn"><span>▶</span> Jouer</button>
+      <div class="home-actions">
+        <button class="home-action home-action-muted" type="button" aria-label="Statistiques bientôt disponibles">
+          <span class="home-action-icon">▥</span><span><b>Statistiques</b><small>Bientôt disponible</small></span>
+        </button>
+        <button class="home-action" id="rulesBtn" type="button">
+          <span class="home-action-icon">?</span><span><b>Règles</b><small>Comment jouer</small></span><i>›</i>
+        </button>
       </div>
+      <small class="home-studio">Nibylo Games</small>
     </main>`;
 
   document.querySelector('#playBtn')?.addEventListener('click', () => {
