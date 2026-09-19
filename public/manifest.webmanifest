@@ -1,0 +1,21 @@
+{
+  "name": "KEITE — Keep It Even",
+  "short_name": "KEITE",
+  "description": "Un puzzle de logique minimaliste par Nibylo Games.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbfbfd",
+  "theme_color": "#fbfbfd",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "./keite-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
