@@ -13,3 +13,18 @@
 .rule-separator{color:#bbb!important;margin:0 2px}.link-demos{display:grid;grid-template-columns:1fr 1fr;gap:8px}.link-demo{background:#f7f6fa;border-radius:15px;padding:10px 6px;text-align:center}.link-demo small{display:block;color:#8b8d98;font-size:9px;font-weight:900;letter-spacing:.09em;margin-bottom:8px}.link-demo>div{display:flex;align-items:center;justify-content:center;gap:8px}.link-demo .piece{width:27px;height:27px}.link-demo .legend-link{width:28px;height:25px}
 .rules-return{margin-top:16px;flex:0 0 auto;padding:14px 18px;border-radius:17px}
 @media(max-height:760px){.rules-header{margin-bottom:11px}.rules-title h2{font-size:21px}.rules-content{gap:8px}.rule-card{padding:10px 12px;gap:5px 10px;border-radius:18px}.rule-number{width:31px;height:31px}.balance-demo{padding:7px}.demo-cell{width:38px;height:38px}.demo-cell .piece{width:22px;height:22px}.mini-demo{padding:6px}.mini-demo .demo-cell{width:31px;height:31px}.mini-demo .demo-cell .piece{width:19px;height:19px}.link-demo{padding:7px 5px}.rules-return{margin-top:9px;padding:12px 16px}}
+
+/* Rules final spacing pass */
+.rules-screen{min-height:100vh}
+.rules-content{gap:14px}
+.rule-card{padding:18px 16px;gap:10px 13px}
+.rule-number{width:38px;height:38px}
+.rule-copy strong{font-size:15px}
+.rule-copy>span{font-size:12.5px}
+.balance-demo{padding:14px}
+.demo-cell{width:49px;height:49px}
+.demo-cell .piece{width:28px;height:28px}
+.triple-demos{gap:10px}.mini-demo{padding:11px 8px}.mini-demo>b{font-size:12px;margin-bottom:9px}.mini-demo .demo-cell{width:41px;height:41px}.mini-demo .demo-cell .piece{width:24px;height:24px}
+.link-demo{padding:12px 7px}.link-demo small{font-size:10px;margin-bottom:9px}.link-demo .piece{width:30px;height:30px}.link-demo .legend-link{width:31px;height:28px;font-size:15px!important}
+.rules-return{margin-top:auto;margin-bottom:max(0px,env(safe-area-inset-bottom));padding:16px 18px}
+@media(max-height:760px){.rules-content{gap:9px}.rule-card{padding:11px 12px}.rule-number{width:32px;height:32px}.rule-copy strong{font-size:13px}.rule-copy>span{font-size:11px}.balance-demo{padding:8px}.demo-cell{width:39px;height:39px}.demo-cell .piece{width:22px;height:22px}.mini-demo{padding:7px}.mini-demo>b{font-size:10px;margin-bottom:5px}.mini-demo .demo-cell{width:32px;height:32px}.mini-demo .demo-cell .piece{width:19px;height:19px}.link-demo{padding:7px 5px}.link-demo small{font-size:9px;margin-bottom:5px}.link-demo .piece{width:24px;height:24px}.rules-return{margin-top:auto}}
