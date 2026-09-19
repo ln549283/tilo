@@ -28,3 +28,7 @@
 .link-demo{padding:12px 7px}.link-demo small{font-size:10px;margin-bottom:9px}.link-demo .piece{width:30px;height:30px}.link-demo .legend-link{width:31px;height:28px;font-size:15px!important}
 .rules-return{margin-top:auto;margin-bottom:max(0px,env(safe-area-inset-bottom));padding:16px 18px}
 @media(max-height:760px){.rules-content{gap:9px}.rule-card{padding:11px 12px}.rule-number{width:32px;height:32px}.rule-copy strong{font-size:13px}.rule-copy>span{font-size:11px}.balance-demo{padding:8px}.demo-cell{width:39px;height:39px}.demo-cell .piece{width:22px;height:22px}.mini-demo{padding:7px}.mini-demo>b{font-size:10px;margin-bottom:5px}.mini-demo .demo-cell{width:32px;height:32px}.mini-demo .demo-cell .piece{width:19px;height:19px}.link-demo{padding:7px 5px}.link-demo small{font-size:9px;margin-bottom:5px}.link-demo .piece{width:24px;height:24px}.rules-return{margin-top:auto}}
+
+/* Rules CTA: keep action visually attached to the rules, not the viewport edge */
+.rules-return{margin-top:28px;margin-bottom:24px}
+@media(max-height:760px){.rules-return{margin-top:18px;margin-bottom:14px}}
