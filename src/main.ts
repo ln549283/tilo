@@ -24,7 +24,7 @@ let errors = 0;
 let hintsLeft = 3;
 let lastChanceUsed = false;
 let hintPosition: Position | null = null;
-let screen: 'home' | 'rules' | 'game' | 'stats' | 'settings' = 'home';
+let screen: 'home' | 'rules' | 'game' | 'stats' | 'settings' | 'about' = 'home';
 
 type Difficulty = 'Facile' | 'Moyen' | 'Difficile' | 'Extrême' | 'Chrono';
 type GameStat = { level:number; difficulty:Difficulty; errors:number; hints:number; seconds:number; date:string };
@@ -38,7 +38,8 @@ function tone(frequency:number, duration=.07, volume=.035, type:OscillatorType='
   if (!soundEnabled) return;
   try {
     audioContext ??= new AudioContext();
-    const ctx=audioContext, osc=ctx.createOscillator(), gain=ctx.createGain();
+    const ctx=audioContext; if(ctx.state==='suspended') void ctx.resume();
+    const osc=ctx.createOscillator(), gain=ctx.createGain();
     osc.type=type; osc.frequency.value=frequency;
     gain.gain.setValueAtTime(0.0001,ctx.currentTime+delay);
     gain.gain.exponentialRampToValueAtTime(volume,ctx.currentTime+delay+.008);
@@ -84,6 +85,7 @@ function render() {
   if (screen === 'rules') return renderRules();
   if (screen === 'stats') return renderStats();
   if (screen === 'settings') return renderSettings();
+  if (screen === 'about') return renderAbout();
   return renderGame();
 }
 
@@ -96,10 +98,10 @@ function renderHome() {
         <img class="keite-wordmark" src="./keite_logo_transparent.png?v=20260917-4" alt="KEITE — Keep It Even" />
         <p>Un puzzle de logique. Simple à comprendre, difficile à lâcher.</p>
       </div>
-      <section class="home-progress">
+      <section class="home-progress home-level-card">
         <span class="home-progress-label">NIVEAU ACTUEL</span>
         <strong>${levelNumber}</strong>
-        <span class="home-infinite">Progression infinie ∞</span>
+        <span class="home-difficulty">● ${difficultyFor(levelNumber)}</span>
       </section>
       <button class="primary home-play" id="playBtn"><span>▶</span> Jouer</button>
       <div class="home-actions">
@@ -109,8 +111,11 @@ function renderHome() {
         <button class="home-action" id="rulesBtn" type="button">
           <span class="home-action-icon">?</span><span><b>Règles</b><small>Comment jouer</small></span><i>›</i>
         </button>
-        <button class="home-action home-settings-link" id="settingsBtn" type="button">
+        <button class="home-action" id="settingsBtn" type="button">
           <span class="home-action-icon">⚙</span><span><b>Paramètres</b><small>Son et préférences</small></span><i>›</i>
+        </button>
+        <button class="home-action" id="aboutBtn" type="button">
+          <span class="home-action-icon">ⓘ</span><span><b>À propos</b><small>KEITE v1.0.0</small></span><i>›</i>
         </button>
       </div>
       <small class="home-studio">Nibylo Games</small>
@@ -123,11 +128,29 @@ function renderHome() {
   });
   document.querySelector('#statsBtn')?.addEventListener('click', () => { playSound('tap'); screen = 'stats'; render(); });
   document.querySelector('#settingsBtn')?.addEventListener('click', () => { playSound('tap'); screen = 'settings'; render(); });
+  document.querySelector('#aboutBtn')?.addEventListener('click', () => { playSound('tap'); screen = 'about'; render(); });
   document.querySelector('#rulesBtn')?.addEventListener('click', () => {
     rulesReturnScreen = 'home'; screen = 'rules'; render();
   });
 }
 
+
+function renderAbout() {
+  app.innerHTML=`
+  <main class="screen about-screen">
+    <header class="about-header"><button class="ghost-icon" id="aboutBack" aria-label="Retour">‹</button></header>
+    <img class="about-logo" src="./keite_logo_transparent.png?v=20260917-4" alt="KEITE — Keep It Even" />
+    <div class="about-version">Version 1.0.0</div>
+    <section class="about-card"><h2>À propos de KEITE</h2><p>KEITE est un jeu de logique minimaliste où chaque grille est un défi d’équilibre. Simple à comprendre, difficile à lâcher, il s’adresse à tous ceux qui aiment réfléchir et progresser à leur rythme.</p>
+      <div class="about-features"><span><b>∞</b> Une progression infinie</span><span><b>▥</b> 5 niveaux de difficulté</span><span><b>💡</b> Des casse-têtes variés</span></div>
+    </section>
+    <section class="about-card developer-card"><span class="about-gamepad">🎮</span><div><b>Développé par<br>Nibylo Games</b><small>Des jeux simples. De grandes idées.</small></div></section>
+    <button class="primary about-return" id="aboutReturn">← &nbsp; Retour à l’accueil</button>
+  </main>`;
+  const back=()=>{playSound('tap');screen='home';render();};
+  document.querySelector('#aboutBack')?.addEventListener('click',back);
+  document.querySelector('#aboutReturn')?.addEventListener('click',back);
+}
 
 function renderSettings() {
   app.innerHTML=`
@@ -278,7 +301,7 @@ function renderGame() {
         </div>
       </header>
       ${renderQuickLegend()}
-      <div class="game-objective">Équilibre la grille</div>
+      <div class="game-objective difficulty-pill"><span></span>${difficultyFor(levelNumber)}</div>
       <section class="board-wrap"><div class="board" style="--size:${level.size}">${cells}${constraintMarkup()}</div></section>
       <div class="selector" aria-label="Choisir un symbole">
         <button class="symbol-button circle-choice ${selected === CIRCLE ? 'selected' : ''}" data-value="${CIRCLE}">${symbol(CIRCLE)}</button>
@@ -297,6 +320,7 @@ function renderGame() {
 }
 
 function playCell(button: HTMLButtonElement) {
+  if(audioContext?.state==='suspended') void audioContext.resume();
   const r = Number(button.dataset.r), c = Number(button.dataset.c), value = selected as number;
   if (value === EMPTY) { grid[r]![c] = EMPTY; hintPosition = null; renderGame(); return; }
   if (value !== level.solution[r]![c]) {
@@ -309,6 +333,7 @@ function playCell(button: HTMLButtonElement) {
 }
 
 function useHint() {
+  if(audioContext?.state==='suspended') void audioContext.resume();
   if (hintsLeft <= 0) { showToast('Plus d’indice disponible sur cette grille.'); return; }
   const hint = findHint(grid, level.constraints, level.solution); if (!hint) return;
   hintsLeft--; hintsUsedThisGame++; playSound('hint'); hintPosition = hint.position; renderGame(); setTimeout(() => showToast(hint.text), 0);
