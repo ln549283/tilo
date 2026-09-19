@@ -1,4 +1,4 @@
-const CACHE_NAME = 'keite-pwa-v1';
+const CACHE_NAME = 'keite-pwa-v2';
 
 const APP_SHELL = [
   './',
