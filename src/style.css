@@ -33,25 +33,25 @@
 .rules-return{margin-top:28px;margin-bottom:24px}
 @media(max-height:760px){.rules-return{margin-top:18px;margin-bottom:14px}}
 
-/* Game screen — release art direction */
-.game-screen{padding-left:22px;padding-right:22px}
-.game-header{grid-template-columns:48px 1fr 92px}
-.game-header>div:nth-child(2) span{text-transform:none;font-size:11px;letter-spacing:.1em;color:#777b98}
-.game-header>div:nth-child(2) strong{font-size:27px;line-height:1}
-.game-objective{align-self:center;margin-top:18px;padding:10px 28px;border-radius:999px;background:#f3f1f8;color:#555975;font-size:12px;font-weight:700}
-.board-wrap{margin:26px 0 auto;padding:0;display:grid;place-items:center}
-.board{width:min(94vw,410px);--gap:6px}
-.cell{border-radius:15px;background:#f0f0f5}
-.cell.fixed{background:#ededf3}
-.constraint{width:27px;height:27px;font-size:15px}
-.selector{grid-template-columns:1fr 1fr;gap:12px;margin-top:28px}
-.symbol-button{height:72px;border:2px solid #e7e7ee;border-radius:18px;background:#fafafd;box-shadow:0 3px 10px rgba(30,32,40,.025)}
-.symbol-button.selected{box-shadow:0 6px 18px rgba(30,32,40,.06)}
-.symbol-button.circle-choice.selected{border-color:#7c4dff;background:#fbf9ff}
-.symbol-button.diamond-choice.selected{border-color:#35c98f;background:#f7fffb}
-.symbol-button .piece{width:38px;height:38px}
-.hint-button{margin-top:20px;padding:12px 20px;background:#fff0b8;gap:10px}
-.hint-button b{font-size:14px;color:#28251d}.hint-button em{min-width:27px;height:27px;font-size:12px}.hint-bulb{font-size:19px}
-.balance-reminder{margin:22px auto 2px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;color:#70758e;font-size:11px;text-align:center;line-height:1.4}
-.balance-reminder .piece{width:18px;height:18px}
-@media(max-height:760px){.game-objective{margin-top:10px;padding:7px 22px}.board-wrap{margin:14px 0 auto}.selector{margin-top:15px}.symbol-button{height:61px}.hint-button{margin-top:10px;padding:9px 16px}.balance-reminder{margin-top:10px;font-size:10px}}
+/* Game screen — consolidated release layout */
+.game-screen{justify-content:flex-start;padding-left:22px;padding-right:22px}
+.game-header{display:grid;grid-template-columns:48px 1fr 92px;align-items:center;text-align:center}
+.game-header>div:nth-child(2){display:flex;flex-direction:column;gap:1px}
+.game-header>div:nth-child(2) span{font-size:10px;letter-spacing:.12em;color:#9295a6;font-weight:900}
+.game-header>div:nth-child(2) strong{font-size:24px;line-height:1.05}
+.game-objective{align-self:center;margin-top:14px;padding:8px 28px;border-radius:999px;background:#f2f0f7;color:#565a76;font-size:12px;font-weight:700}
+.board-wrap{margin:36px 0 0;padding:0;display:grid;place-items:center}
+.board{--gap:6px;width:min(92vw,400px);aspect-ratio:1}
+.cell{border-radius:15px;background:#f0f0f5}.cell.fixed{background:#e9e9ef}
+.cell .piece{width:55%;height:55%;max-width:40px;max-height:40px}
+.constraint{width:26px;height:26px;font-size:15px}
+.selector{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:auto;padding-top:30px}
+.symbol-button{height:66px;border:2px solid #e7e7ee;border-radius:18px;background:#f8f8fb;display:grid;place-items:center;cursor:pointer;box-shadow:none}
+.symbol-button .piece{width:36px;height:36px}
+.symbol-button.circle-choice.selected{border-color:#7c4dff;background:#fbf9ff;box-shadow:0 5px 16px rgba(124,77,255,.08)}
+.symbol-button.diamond-choice.selected{border-color:#35c98f;background:#f7fffb;box-shadow:0 5px 16px rgba(53,201,143,.08)}
+.hint-button{margin-top:12px;align-self:center;border:0;border-radius:999px;background:#fff0b8;padding:10px 18px;display:flex;align-items:center;gap:9px;color:#5b4a13;cursor:pointer}
+.hint-button b{font-size:13px}.hint-button em{font-style:normal;font-size:11px;font-weight:900;background:white;border-radius:999px;min-width:25px;height:25px;display:grid;place-items:center}
+.balance-reminder{margin:14px auto 0;color:#70758e;font-size:10.5px;text-align:center;line-height:1.4;white-space:normal}
+.balance-reminder .piece{display:inline-block;width:14px;height:14px;vertical-align:-2px;margin:0 3px}
+@media(max-height:760px){.game-objective{margin-top:8px;padding:6px 22px}.board-wrap{margin-top:18px}.selector{padding-top:16px}.symbol-button{height:58px}.hint-button{margin-top:8px;padding:8px 15px}.balance-reminder{margin-top:8px;font-size:9.5px}}
