@@ -124,3 +124,16 @@
  .recent-card{min-height:105px}.empty-stats{padding:12px 8px!important}
  .stats-return{padding:11px}
 }
+
+/* Settings */
+.home-settings-link{grid-column:1/-1}
+.settings-screen{justify-content:flex-start;padding-left:22px;padding-right:22px}
+.settings-header{display:grid;grid-template-columns:44px 1fr 44px;align-items:start}
+.settings-header>div{grid-column:2;text-align:center}.settings-header h2{margin:2px 0 4px;font-size:25px}.settings-header p{margin:0;color:#7d80a0;font-size:12px}
+.settings-list{margin-top:30px;display:flex;flex-direction:column;gap:14px}
+.setting-row{display:grid;grid-template-columns:48px 1fr auto;align-items:center;gap:13px;padding:18px;border:1px solid #ececf3;border-radius:22px;background:#fff;box-shadow:0 6px 20px rgba(45,40,70,.04);text-align:left}
+.setting-icon{width:48px;height:48px;border-radius:15px;background:#eee9ff;color:#7042ef;display:grid;place-items:center;font-size:25px;font-weight:900}
+.setting-copy b{display:block;font-size:14px}.setting-copy span{display:block;margin-top:4px;color:#898c9e;font-size:10px;line-height:1.35}
+.switch{width:50px;height:29px;border:0;border-radius:999px;background:#dedee7;padding:3px;cursor:pointer;transition:.18s}.switch i{display:block;width:23px;height:23px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(20,20,30,.16);transition:.18s}.switch.on{background:#7c4dff}.switch.on i{transform:translateX(21px)}
+.setting-note{padding:17px 18px;border-radius:18px;background:#f4f1ff;text-align:left}.setting-note b{display:block;color:#5e48a6;font-size:12px}.setting-note span{display:block;margin-top:5px;color:#79738e;font-size:10px;line-height:1.45}
+.settings-return{margin-top:auto;margin-bottom:18px;padding:15px;font-size:14px}
