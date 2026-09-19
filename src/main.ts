@@ -71,12 +71,44 @@ function renderRules() {
     <main class="screen rules-screen">
       <header class="rules-header">
         <button class="ghost-icon" id="backBtn" aria-label="Retour">‹</button>
-        <h2>Simple à apprendre.</h2>
+        <div class="rules-title">
+          <h2>Simple à apprendre.</h2>
+          <p>Trois règles, une seule logique : l’équilibre.</p>
+        </div>
       </header>
       <div class="rules-content">
-        <div class="rule rule-1"><b>1</b><div><strong>Équilibre chaque ligne.</strong><span>Autant de ${symbol(CIRCLE)} que de ${symbol(DIAMOND)} dans chaque ligne et chaque colonne.</span></div><div class="rule-visual" aria-label="Exemple équilibré"></div></div>
-        <div class="rule rule-2"><b>2</b><div><strong>Jamais trois symboles identiques à la suite.</strong><span>Ni horizontalement, ni verticalement.</span></div><div class="rule-visual" aria-label="Exemple maximum deux identiques à la suite"></div></div>
-        <div class="rule rule-3"><b>3</b><div><strong>Lis les liens.</strong><span><span class="legend-link same-link">=</span> même symbole · <span class="legend-link different-link">×</span> symboles différents.</span></div><div class="rule-visual" aria-label="Exemples identique et différent"></div></div>
+        <section class="rule-card">
+          <b class="rule-number">1</b>
+          <div class="rule-copy">
+            <strong>Équilibre chaque ligne et chaque colonne.</strong>
+            <span>Autant de ${symbol(CIRCLE)} que de ${symbol(DIAMOND)}.</span>
+          </div>
+          <div class="balance-demo" aria-label="Deux cercles et deux losanges">
+            <span class="demo-cell">${symbol(CIRCLE)}</span><span class="demo-cell">${symbol(DIAMOND)}</span><span class="demo-cell">${symbol(CIRCLE)}</span><span class="demo-cell">${symbol(DIAMOND)}</span>
+          </div>
+        </section>
+        <section class="rule-card">
+          <b class="rule-number">2</b>
+          <div class="rule-copy">
+            <strong>Jamais trois symboles identiques à la suite.</strong>
+            <span>Ni horizontalement, ni verticalement.</span>
+          </div>
+          <div class="triple-demos">
+            <div class="mini-demo bad"><b>× Incorrect</b><div><span class="demo-cell">${symbol(CIRCLE)}</span><span class="demo-cell">${symbol(CIRCLE)}</span><span class="demo-cell">${symbol(CIRCLE)}</span></div></div>
+            <div class="mini-demo good"><b>✓ Correct</b><div><span class="demo-cell">${symbol(CIRCLE)}</span><span class="demo-cell">${symbol(DIAMOND)}</span><span class="demo-cell">${symbol(CIRCLE)}</span></div></div>
+          </div>
+        </section>
+        <section class="rule-card">
+          <b class="rule-number">3</b>
+          <div class="rule-copy">
+            <strong>Respecte les liens.</strong>
+            <span><span class="legend-link same-link">=</span> mêmes symboles <span class="rule-separator">·</span> <span class="legend-link different-link">×</span> symboles différents</span>
+          </div>
+          <div class="link-demos">
+            <div class="link-demo"><small>IDENTIQUE</small><div>${symbol(CIRCLE)}<span class="legend-link same-link">=</span>${symbol(CIRCLE)}</div></div>
+            <div class="link-demo"><small>DIFFÉRENT</small><div>${symbol(DIAMOND)}<span class="legend-link different-link">×</span>${symbol(CIRCLE)}</div></div>
+          </div>
+        </section>
       </div>
       <button class="primary rules-return" id="startBtn">${localStorage.getItem(STORAGE_TUTORIAL) ? 'Retour au jeu' : 'J’ai compris'}</button>
     </main>`;
