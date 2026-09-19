@@ -24,7 +24,25 @@ let errors = 0;
 let hintsLeft = 3;
 let lastChanceUsed = false;
 let hintPosition: Position | null = null;
-let screen: 'home' | 'rules' | 'game' = 'home';
+let screen: 'home' | 'rules' | 'game' | 'stats' = 'home';
+
+type Difficulty = 'Facile' | 'Moyen' | 'Difficile' | 'Extrême' | 'Chrono';
+type GameStat = { level:number; difficulty:Difficulty; errors:number; hints:number; seconds:number; date:string };
+type StatsData = { games:GameStat[]; currentPerfectStreak:number; maxPerfectStreak:number };
+const STORAGE_STATS = 'keite-stats-v1';
+let gameStartedAt = Date.now();
+let hintsUsedThisGame = 0;
+function difficultyFor(n:number):Difficulty { if(n<=10)return 'Facile'; if(n<=30)return 'Moyen'; if(n<=50)return 'Difficile'; if(n<=69)return 'Extrême'; return 'Chrono'; }
+function readStats():StatsData { try { const v=JSON.parse(localStorage.getItem(STORAGE_STATS)||''); if(v?.games) return v; } catch {} return {games:[],currentPerfectStreak:0,maxPerfectStreak:0}; }
+function saveWinStat(){
+  const s=readStats(); const perfect=errors===0;
+  s.currentPerfectStreak=perfect?s.currentPerfectStreak+1:0;
+  s.maxPerfectStreak=Math.max(s.maxPerfectStreak,s.currentPerfectStreak);
+  s.games.push({level:levelNumber,difficulty:difficultyFor(levelNumber),errors,hints:hintsUsedThisGame,seconds:Math.max(1,Math.round((Date.now()-gameStartedAt)/1000)),date:new Date().toISOString()});
+  localStorage.setItem(STORAGE_STATS,JSON.stringify(s));
+}
+function formatTime(seconds:number){const m=Math.floor(seconds/60),s=seconds%60;return m? `${m}m ${String(s).padStart(2,'0')}s`:`${s}s`;}
+
 let rulesReturnScreen: 'home' | 'game' = 'home';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -39,6 +57,7 @@ function symbol(value: number) {
 function render() {
   if (screen === 'home') return renderHome();
   if (screen === 'rules') return renderRules();
+  if (screen === 'stats') return renderStats();
   return renderGame();
 }
 
@@ -58,8 +77,8 @@ function renderHome() {
       </section>
       <button class="primary home-play" id="playBtn"><span>▶</span> Jouer</button>
       <div class="home-actions">
-        <button class="home-action home-action-muted" type="button" aria-label="Statistiques bientôt disponibles">
-          <span class="home-action-icon">▥</span><span><b>Statistiques</b><small>Bientôt disponible</small></span>
+        <button class="home-action" id="statsBtn" type="button">
+          <span class="home-action-icon">▥</span><span><b>Statistiques</b><small>Votre progression</small></span><i>›</i>
         </button>
         <button class="home-action" id="rulesBtn" type="button">
           <span class="home-action-icon">?</span><span><b>Règles</b><small>Comment jouer</small></span><i>›</i>
@@ -73,9 +92,41 @@ function renderHome() {
     else { rulesReturnScreen = 'game'; screen = 'rules'; }
     render();
   });
+  document.querySelector('#statsBtn')?.addEventListener('click', () => { screen = 'stats'; render(); });
   document.querySelector('#rulesBtn')?.addEventListener('click', () => {
     rulesReturnScreen = 'home'; screen = 'rules'; render();
   });
+}
+
+
+function renderStats() {
+  const s=readStats(), games=s.games, wins=games.length, perfect=games.filter(g=>g.errors===0).length;
+  const hints=games.reduce((a,g)=>a+g.hints,0), avg=wins?Math.round(games.reduce((a,g)=>a+g.seconds,0)/wins):0;
+  const diffs:Difficulty[]=['Facile','Moyen','Difficile','Extrême','Chrono'];
+  const diffHtml=diffs.map(d=>{const n=games.filter(g=>g.difficulty===d).length;const p=wins?Math.round(n/wins*100):0;return `<div class="diff-stat"><i></i><b>${d}</b><strong>${n}</strong><small>${p} %</small></div>`}).join('');
+  const recent=[...games].reverse().slice(0,4).map(g=>`<div class="stat-row"><b>#${g.level}</b><span>${g.difficulty}</span><span class="success-pill">Réussi</span><span>${g.errors}</span><span>${g.hints}</span><span>${formatTime(g.seconds)}</span></div>`).join('');
+  app.innerHTML=`
+  <main class="screen stats-screen">
+    <header class="stats-header"><button class="ghost-icon" id="statsBack">‹</button><div><h2>Statistiques</h2><p>Votre progression en un coup d’œil !</p></div></header>
+    <div class="stats-scroll">
+      <section class="stats-summary">
+        <div class="summary-card"><span>Niveau actuel</span><strong>${levelNumber}</strong></div>
+        <div class="summary-card"><span>Grilles réussies</span><strong>${wins}</strong></div>
+      </section>
+      <section class="metric-grid">
+        <div class="metric-card"><b>🏆 ${perfect}</b><span>Grilles parfaites</span><small>(0 erreur)</small></div>
+        <div class="metric-card"><b>🔥 ${s.maxPerfectStreak}</b><span>Série parfaite max</span></div>
+        <div class="metric-card"><b>💡 ${hints}</b><span>Indices utilisés</span><small>${wins?(hints/wins).toFixed(1).replace('.',','):'0'} / grille</small></div>
+        <div class="metric-card"><b>◷ ${wins?formatTime(avg):'—'}</b><span>Temps moyen</span><small>par grille</small></div>
+      </section>
+      <section class="stats-card"><h3>Répartition par difficulté</h3><p>Nombre de grilles réussies dans chaque difficulté</p><div class="difficulty-grid">${diffHtml}</div></section>
+      <section class="streak-card"><div><h3>🔥 Votre meilleure série</h3><strong>${s.maxPerfectStreak}</strong> <span>grilles parfaites d’affilée</span></div><div class="advice"><h3>💡 Conseil</h3><p>Analyse d’abord les lignes et colonnes avec le moins de cases possibles.</p></div></section>
+      <section class="stats-card recent-card"><h3>Dernières parties</h3><div class="stat-table-head"><span>#</span><span>Difficulté</span><span>Résultat</span><span>Erreurs</span><span>Indices</span><span>Temps</span></div>${recent||'<p class="empty-stats">Terminez une grille pour commencer vos statistiques.</p>'}</section>
+    </div>
+    <button class="primary stats-return" id="statsReturn">← &nbsp; Retour à l’accueil</button>
+  </main>`;
+  document.querySelector('#statsBack')?.addEventListener('click',()=>{screen='home';render();});
+  document.querySelector('#statsReturn')?.addEventListener('click',()=>{screen='home';render();});
 }
 
 function renderRules() {
@@ -207,7 +258,7 @@ function playCell(button: HTMLButtonElement) {
 function useHint() {
   if (hintsLeft <= 0) { showToast('Plus d’indice disponible sur cette grille.'); return; }
   const hint = findHint(grid, level.constraints, level.solution); if (!hint) return;
-  hintsLeft--; hintPosition = hint.position; renderGame(); setTimeout(() => showToast(hint.text), 0);
+  hintsLeft--; hintsUsedThisGame++; hintPosition = hint.position; renderGame(); setTimeout(() => showToast(hint.text), 0);
 }
 function showToast(text: string) { const toast = document.querySelector<HTMLDivElement>('#toast'); if (!toast) return; toast.textContent = text; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3800); }
 
@@ -219,8 +270,8 @@ function showThirdErrorModal() {
   document.querySelector('#restartBtn')?.addEventListener('click',()=>{modal.remove();restartCurrentLevel();});
   if(canOfferLastChance) document.querySelector('#rewardBtn')?.addEventListener('click',async()=>{const btn=document.querySelector<HTMLButtonElement>('#rewardBtn')!;btn.disabled=true;btn.textContent='Chargement…';const rewarded=await showRewardedHint();if(!rewarded){btn.disabled=false;btn.textContent='Pub indisponible';return;}lastChanceUsed=true;errors=2;modal.remove();renderGame();showToast('Dernière chance activée : une erreur supplémentaire est permise.');});
 }
-function showWinModal(){navigator.vibrate?.([25,35,25]);const modal=document.createElement('div');modal.className='modal-backdrop win-backdrop';modal.innerHTML=`<div class="modal-card win-card"><div class="success-mark">✓</div><span class="eyebrow">BIEN JOUÉ</span><h3>Niveau ${levelNumber} réussi !</h3><p>${errors===0?'Parfait. Aucune erreur.':`${errors} erreur${errors>1?'s':''}.`}</p><button class="primary" id="nextBtn">Niveau suivant</button></div>`;document.body.appendChild(modal);document.querySelector('#nextBtn')?.addEventListener('click',()=>{modal.remove();levelNumber++;localStorage.setItem(STORAGE_LEVEL,String(levelNumber));loadLevel(true);});}
+function showWinModal(){saveWinStat();navigator.vibrate?.([25,35,25]);const modal=document.createElement('div');modal.className='modal-backdrop win-backdrop';modal.innerHTML=`<div class="modal-card win-card"><div class="success-mark">✓</div><span class="eyebrow">BIEN JOUÉ</span><h3>Niveau ${levelNumber} réussi !</h3><p>${errors===0?'Parfait. Aucune erreur.':`${errors} erreur${errors>1?'s':''}.`}</p><button class="primary" id="nextBtn">Niveau suivant</button></div>`;document.body.appendChild(modal);document.querySelector('#nextBtn')?.addEventListener('click',()=>{modal.remove();levelNumber++;localStorage.setItem(STORAGE_LEVEL,String(levelNumber));loadLevel(true);});}
 function newVariant(){variant=(variant+1+(Date.now()&0xffff))>>>0;}
-function restartCurrentLevel(){newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;renderGame();}
-function loadLevel(forceNew=false){if(forceNew)newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;screen='game';render();}
+function restartCurrentLevel(){gameStartedAt=Date.now();hintsUsedThisGame=0;newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;renderGame();}
+function loadLevel(forceNew=false){gameStartedAt=Date.now();hintsUsedThisGame=0;if(forceNew)newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;screen='game';render();}
 render();
