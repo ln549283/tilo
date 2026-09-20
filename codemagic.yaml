@@ -47,8 +47,6 @@ workflows:
       java: 21
       android_signing:
         - whichly-upload
-      groups:
-        - keite_android
       vars:
         PACKAGE_NAME: "com.nibylogames.keite"
         APP_VERSION: "1.0.0"
