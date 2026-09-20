@@ -53,13 +53,35 @@ function playSound(kind:'tap'|'place'|'error'|'hint'|'win'|'lose') {
   if(kind==='place') tone(620,.055,.025,'sine');
   if(kind==='error'){tone(180,.09,.035,'triangle');tone(145,.1,.025,'triangle',.07);}
   if(kind==='hint'){tone(760,.07,.025,'sine');tone(980,.1,.025,'sine',.07);}
-  if(kind==='win'){tone(523,.09,.03,'sine');tone(659,.09,.03,'sine',.1);tone(784,.16,.035,'sine',.2);}
+  if(kind==='win'){tone(523,.08,.03,'sine');tone(659,.09,.032,'sine',.09);tone(784,.11,.034,'sine',.19);tone(1047,.22,.04,'sine',.31);}
   if(kind==='lose'){tone(260,.1,.03,'triangle');tone(205,.13,.03,'triangle',.11);}
+}
+function playStreakAccent(streak:number){
+  if(streak===3) tone(740,.055,.018,'sine',.02);
+  if(streak===5) tone(880,.065,.02,'sine',.02);
+  if(streak===8) {tone(988,.06,.022,'sine',.02);tone(1175,.08,.02,'sine',.08);}
+}
+function playVictorySound(perfect:boolean){
+  playSound('win');
+  if(perfect){tone(1319,.12,.025,'sine',.48);tone(1568,.16,.018,'sine',.57);}
 }
 let gameStartedAt = Date.now();
 let hintsUsedThisGame = 0;
+let placementStreak = 0;
 function difficultyFor(n:number):Difficulty { if(n<=10)return 'Facile'; if(n<=30)return 'Moyen'; if(n<=50)return 'Difficile'; if(n<=69)return 'Extrême'; return 'Chrono'; }
 function difficultyClass(n:number){ return `difficulty-${difficultyFor(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}`; }
+function nextDifficultyInfo(n:number){
+  const steps = [
+    {last:10,next:'Moyen' as Difficulty},
+    {last:30,next:'Difficile' as Difficulty},
+    {last:50,next:'Extrême' as Difficulty},
+    {last:69,next:'Chrono' as Difficulty}
+  ];
+  const step=steps.find(s=>n<=s.last);
+  if(!step) return null;
+  const remaining=step.last-n;
+  return {next:step.next,remaining,text:remaining===0?`${step.next} au prochain niveau`:`${remaining} niveau${remaining>1?'x':''} avant ${step.next}`};
+}
 function readStats():StatsData { try { const v=JSON.parse(localStorage.getItem(STORAGE_STATS)||''); if(v?.games) return v; } catch {} return {games:[],currentPerfectStreak:0,maxPerfectStreak:0}; }
 function saveWinStat(){
   const s=readStats(); const perfect=errors===0;
@@ -67,6 +89,7 @@ function saveWinStat(){
   s.maxPerfectStreak=Math.max(s.maxPerfectStreak,s.currentPerfectStreak);
   s.games.push({level:levelNumber,difficulty:difficultyFor(levelNumber),errors,hints:hintsUsedThisGame,seconds:Math.max(1,Math.round((Date.now()-gameStartedAt)/1000)),date:new Date().toISOString()});
   localStorage.setItem(STORAGE_STATS,JSON.stringify(s));
+  return s;
 }
 function formatTime(seconds:number){const m=Math.floor(seconds/60),s=seconds%60;return m? `${m}m ${String(s).padStart(2,'0')}s`:`${s}s`;}
 
@@ -111,6 +134,7 @@ function renderHome() {
           <span class="home-progress-label">NIVEAU ACTUEL</span>
           <strong>${levelNumber}</strong>
           <span class="home-difficulty ${difficultyClass(levelNumber)}"><i></i>${difficultyFor(levelNumber)}</span>
+          ${nextDifficultyInfo(levelNumber)?`<small class="home-next-difficulty">${nextDifficultyInfo(levelNumber)!.text}</small>`:''}
         </div>
         <div class="home-mini-grid" aria-hidden="true">
           <span>${symbol(CIRCLE)}</span><span>${symbol(DIAMOND)}</span>
@@ -286,6 +310,13 @@ function constraintMarkup() {
   }).join('');
 }
 
+function renderContextHelp(){
+  if(level.constraints.length){
+    return `<div class="game-context-help links-help"><span class="legend-link same-link">=</span><span>mêmes symboles</span><i>·</i><span class="legend-link different-link">×</span><span>symboles différents</span></div>`;
+  }
+  return `<div class="game-context-help balance-help">Autant de ${symbol(CIRCLE)} que de ${symbol(DIAMOND)} dans chaque ligne et chaque colonne.</div>`;
+}
+
 function renderGame() {
   const clueSet = new Set(level.initial.flatMap((row, r) => row.map((v, c) => v !== EMPTY ? `${r}:${c}` : '')));
   const cells = grid.flatMap((row, r) => row.map((value, c) => {
@@ -305,13 +336,14 @@ function renderGame() {
         </div>
       </header>
       <div class="game-objective difficulty-pill ${difficultyClass(levelNumber)}"><span></span>${difficultyFor(levelNumber)}</div>
+      ${placementStreak>=3?`<div class="placement-streak">Série ×${placementStreak}</div>`:''}
+      ${renderContextHelp()}
       <section class="board-wrap"><div class="board" style="--size:${level.size}">${cells}${constraintMarkup()}</div></section>
       <div class="selector" aria-label="Choisir un symbole">
         <button class="symbol-button circle-choice ${selected === CIRCLE ? 'selected' : ''}" data-value="${CIRCLE}">${symbol(CIRCLE)}</button>
         <button class="symbol-button diamond-choice ${selected === DIAMOND ? 'selected' : ''}" data-value="${DIAMOND}">${symbol(DIAMOND)}</button>
       </div>
       <button class="hint-button" id="hintBtn"><span class="hint-bulb">💡</span><b>Indice</b><em>${hintsLeft}</em></button>
-      <div class="balance-reminder">Autant de ${symbol(CIRCLE)} que de ${symbol(DIAMOND)} dans chaque ligne et chaque colonne.</div>
       <div id="toast" class="toast"></div>
     </main>`;
 
@@ -327,10 +359,10 @@ function playCell(button: HTMLButtonElement) {
   const r = Number(button.dataset.r), c = Number(button.dataset.c), value = selected as number;
   if (value === EMPTY) { grid[r]![c] = EMPTY; hintPosition = null; renderGame(); return; }
   if (value !== level.solution[r]![c]) {
-    playSound('error'); errors++; navigator.vibrate?.([45,30,45]); button.classList.add('wrong');
+    placementStreak=0; playSound('error'); errors++; navigator.vibrate?.([45,30,45]); button.classList.add('wrong');
     setTimeout(() => { if (errors >= 3) showThirdErrorModal(); else renderGame(); }, 280); return;
   }
-  grid[r]![c] = value as FilledValue; hintPosition = null; playSound('place'); navigator.vibrate?.(18);
+  grid[r]![c] = value as FilledValue; hintPosition = null; placementStreak++; playSound('place'); playStreakAccent(placementStreak); navigator.vibrate?.(placementStreak>=5?[12,20,18]:18);
   if (grid.every(row => row.every(v => v !== EMPTY)) && gridIsValid(grid, level.constraints, true)) setTimeout(showWinModal, 180);
   else renderGame();
 }
@@ -352,8 +384,30 @@ function showThirdErrorModal() {
   document.querySelector('#restartBtn')?.addEventListener('click',()=>{modal.remove();restartCurrentLevel();});
   if(canOfferLastChance) document.querySelector('#rewardBtn')?.addEventListener('click',async()=>{const btn=document.querySelector<HTMLButtonElement>('#rewardBtn')!;btn.disabled=true;btn.textContent='Chargement…';const rewarded=await showRewardedHint();if(!rewarded){btn.disabled=false;btn.textContent='Pub indisponible';return;}lastChanceUsed=true;errors=2;modal.remove();renderGame();showToast('Dernière chance activée : une erreur supplémentaire est permise.');});
 }
-function showWinModal(){saveWinStat();playSound('win');navigator.vibrate?.([25,35,25]);const modal=document.createElement('div');modal.className='modal-backdrop win-backdrop';modal.innerHTML=`<div class="modal-card win-card"><div class="success-mark">✓</div><span class="eyebrow">BIEN JOUÉ</span><h3>Niveau ${levelNumber} réussi !</h3><p>${errors===0?'Parfait. Aucune erreur.':`${errors} erreur${errors>1?'s':''}.`}</p><button class="primary" id="nextBtn">Niveau suivant</button></div>`;document.body.appendChild(modal);document.querySelector('#nextBtn')?.addEventListener('click',()=>{modal.remove();levelNumber++;localStorage.setItem(STORAGE_LEVEL,String(levelNumber));loadLevel(true);});}
+function showWinModal(){
+  const perfect=errors===0;
+  const stats=saveWinStat();
+  const progress=nextDifficultyInfo(levelNumber);
+  playVictorySound(perfect);
+  navigator.vibrate?.(perfect?[24,28,35,24,50]:[25,35,25]);
+  const modal=document.createElement('div');
+  modal.className='modal-backdrop win-backdrop';
+  modal.innerHTML=`<div class="modal-card win-card ${perfect?'perfect-win':''}">
+    <div class="success-mark">✓</div>
+    <span class="eyebrow">${perfect?'PARFAIT':'BIEN JOUÉ'}</span>
+    <h3>Niveau ${levelNumber} réussi !</h3>
+    <div class="win-metrics">
+      <span><b>${errors}</b><small>erreur${errors>1?'s':''}</small></span>
+      <span><b>${hintsUsedThisGame}</b><small>indice${hintsUsedThisGame>1?'s':''}</small></span>
+      <span><b>🔥 ${stats.currentPerfectStreak}</b><small>série parfaite</small></span>
+    </div>
+    ${progress?`<p class="win-progress">${progress.text}</p>`:''}
+    <button class="primary" id="nextBtn">Niveau suivant</button>
+  </div>`;
+  document.body.appendChild(modal);
+  document.querySelector('#nextBtn')?.addEventListener('click',()=>{modal.remove();levelNumber++;localStorage.setItem(STORAGE_LEVEL,String(levelNumber));loadLevel(true);});
+}
 function newVariant(){variant=(variant+1+(Date.now()&0xffff))>>>0;}
-function restartCurrentLevel(){gameStartedAt=Date.now();hintsUsedThisGame=0;newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;renderGame();}
-function loadLevel(forceNew=false){gameStartedAt=Date.now();hintsUsedThisGame=0;if(forceNew)newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;screen='game';render();}
+function restartCurrentLevel(){gameStartedAt=Date.now();hintsUsedThisGame=0;placementStreak=0;newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;renderGame();}
+function loadLevel(forceNew=false){gameStartedAt=Date.now();hintsUsedThisGame=0;placementStreak=0;if(forceNew)newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;screen='game';render();}
 render();
