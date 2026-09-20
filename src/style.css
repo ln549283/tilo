@@ -219,3 +219,37 @@ body{height:100dvh;min-height:100dvh}
   .game-screen .selector{padding-top:10px}
   .balance-reminder{font-size:9px;margin-top:6px}
 }
+
+
+/* 2026-09-20 — reward loop + contextual onboarding */
+.home-next-difficulty{margin-top:8px;color:#9598a8;font-size:9.5px;font-weight:700;white-space:nowrap}
+.game-context-help{min-height:28px;margin:10px auto 0;display:flex;align-items:center;justify-content:center;gap:6px;color:#70758e;font-size:10.5px;line-height:1.35;text-align:center}
+.game-context-help .piece{width:14px;height:14px;margin:0 2px}
+.game-context-help .legend-link{width:24px;height:22px;font-size:12px!important;border-radius:7px}
+.game-context-help i{font-style:normal;color:#b6b7c0;margin:0 1px}
+.placement-streak{align-self:center;margin-top:7px;padding:5px 10px;border-radius:999px;background:#fff4d8;color:#9b6b12;font-size:10px;font-weight:900;letter-spacing:.02em;animation:streak-pop .18s ease-out}
+@keyframes streak-pop{from{transform:scale(.88);opacity:.45}to{transform:scale(1);opacity:1}}
+.board-wrap{margin-top:16px}
+.game-screen .selector{margin-top:auto;padding-top:14px}
+.hint-button{margin-top:9px;margin-bottom:4px}
+.rules-return{margin-top:18px!important;margin-bottom:max(18px,env(safe-area-inset-bottom))!important}
+
+/* More rewarding, still restrained */
+.win-card{overflow:hidden;position:relative}
+.win-card.perfect-win:before{content:"";position:absolute;inset:-40% -20% auto;height:160px;background:radial-gradient(circle,rgba(124,77,255,.12),transparent 68%);pointer-events:none}
+.win-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0 12px}
+.win-metrics span{padding:10px 4px;border-radius:14px;background:#f5f4f9;display:flex;flex-direction:column;align-items:center;gap:3px}
+.win-metrics b{font-size:16px;color:#292b3a}
+.win-metrics small{font-size:8.5px;color:#858896}
+.win-progress{margin:0 auto 16px!important;padding:8px 12px;border-radius:999px;background:#f2efff;color:#6747cf!important;font-size:10.5px!important;font-weight:800}
+
+/* Keep gameplay clear of Android system bars on short devices */
+@media(max-height:780px){
+  .game-context-help{margin-top:6px;font-size:9.5px;min-height:24px}
+  .game-objective{margin-top:6px}
+  .placement-streak{margin-top:4px;padding:4px 9px}
+  .board-wrap{margin-top:8px}
+  .game-screen .selector{padding-top:8px}
+  .hint-button{margin-top:7px;margin-bottom:8px}
+  .rules-return{margin-top:10px!important;margin-bottom:max(12px,env(safe-area-inset-bottom))!important}
+}
