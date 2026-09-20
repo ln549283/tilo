@@ -54,24 +54,24 @@ type Spec = {
 };
 
 function specFor(level: number): Spec {
-  // Facile : apprentissage 4×4, puis 6×6 très guidée.
+  // Facile : uniquement 4×4. Le changement de taille marque clairement le passage en Moyen.
   if (level <= 5) return { size: 4, clueRate: .58, constraints: 0, tier: 'intro', target: [5, 20] };
-  if (level <= 10) return { size: 4, clueRate: .48, constraints: 1, tier: 'easy', target: [8, 26] };
-  if (level <= 15) return { size: 6, clueRate: .68, constraints: 2, tier: 'easy', target: [10, 30] };
+  if (level <= 10) return { size: 4, clueRate: .46, constraints: 1, tier: 'easy', target: [8, 28] };
 
-  // Moyen : 6×6 encore guidée, sans longues chaînes de suppositions.
-  if (level <= 25) return { size: 6, clueRate: .58, constraints: 3, tier: 'medium', target: [18, 38] };
-  if (level <= 35) return { size: 6, clueRate: .52, constraints: 3, tier: 'medium', target: [24, 46] };
+  // Moyen : première 6×6, volontairement très guidée au départ.
+  if (level <= 17) return { size: 6, clueRate: .68, constraints: 2, tier: 'medium', target: [10, 30] };
+  if (level <= 25) return { size: 6, clueRate: .57, constraints: 3, tier: 'medium', target: [18, 42] };
 
-  // Difficile : moins d'indices et davantage de ramifications.
-  if (level <= 45) return { size: 6, clueRate: .45, constraints: 4, tier: 'sparse', target: [34, 58] };
-  if (level <= 55) return { size: 6, clueRate: .38, constraints: 4, tier: 'sparse', target: [44, 72] };
+  // Difficile : 6×6 plus ouverte, davantage de croisements de règles.
+  if (level <= 35) return { size: 6, clueRate: .47, constraints: 3, tier: 'sparse', target: [30, 58] };
+  if (level <= 45) return { size: 6, clueRate: .39, constraints: 4, tier: 'sparse', target: [42, 74] };
 
-  // Extrême : grilles volontairement retenues parmi les candidats les plus coûteux à résoudre.
-  if (level <= 69) return { size: 6, clueRate: .30, constraints: 4, tier: 'deep', target: [58, 120] };
+  // Extrême : candidats retenus selon leur coût réel de résolution.
+  if (level <= 57) return { size: 6, clueRate: .33, constraints: 4, tier: 'deep', target: [54, 100] };
+  if (level <= 69) return { size: 6, clueRate: .28, constraints: 4, tier: 'deep', target: [66, 130] };
 
-  // Chrono garde une difficulté de grille proche d'Extrême : la pression vient du temps.
-  return { size: 6, clueRate: .30, constraints: 4, tier: 'deep', target: [54, 120] };
+  // Chrono : complexité proche d'Extrême ; le temps ajoute la pression.
+  return { size: 6, clueRate: .30, constraints: 4, tier: 'deep', target: [56, 120] };
 }
 
 function legalValues(grid: Grid, constraints: readonly Constraint[], r: number, c: number): FilledValue[] {
