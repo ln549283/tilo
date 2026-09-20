@@ -68,13 +68,13 @@ function playVictorySound(perfect:boolean){
 let gameStartedAt = Date.now();
 let hintsUsedThisGame = 0;
 let placementStreak = 0;
-function difficultyFor(n:number):Difficulty { if(n<=10)return 'Facile'; if(n<=30)return 'Moyen'; if(n<=50)return 'Difficile'; if(n<=69)return 'Extrême'; return 'Chrono'; }
+function difficultyFor(n:number):Difficulty { if(n<=15)return 'Facile'; if(n<=35)return 'Moyen'; if(n<=55)return 'Difficile'; if(n<=69)return 'Extrême'; return 'Chrono'; }
 function difficultyClass(n:number){ return `difficulty-${difficultyFor(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}`; }
 function nextDifficultyInfo(n:number){
   const steps = [
-    {last:10,next:'Moyen' as Difficulty},
-    {last:30,next:'Difficile' as Difficulty},
-    {last:50,next:'Extrême' as Difficulty},
+    {last:15,next:'Moyen' as Difficulty},
+    {last:35,next:'Difficile' as Difficulty},
+    {last:55,next:'Extrême' as Difficulty},
     {last:69,next:'Chrono' as Difficulty}
   ];
   const step=steps.find(s=>n<=s.last);
@@ -338,7 +338,7 @@ function renderGame() {
       <div class="game-objective difficulty-pill ${difficultyClass(levelNumber)}"><span></span>${difficultyFor(levelNumber)}</div>
       ${placementStreak>=3?`<div class="placement-streak">Série ×${placementStreak}</div>`:''}
       ${renderContextHelp()}
-      <section class="board-wrap"><div class="board" style="--size:${level.size}">${cells}${constraintMarkup()}</div></section>
+      <section class="board-wrap"><div class="board size-${level.size}" style="--size:${level.size}">${cells}${constraintMarkup()}</div></section>
       <div class="selector" aria-label="Choisir un symbole">
         <button class="symbol-button circle-choice ${selected === CIRCLE ? 'selected' : ''}" data-value="${CIRCLE}">${symbol(CIRCLE)}</button>
         <button class="symbol-button diamond-choice ${selected === DIAMOND ? 'selected' : ''}" data-value="${DIAMOND}">${symbol(DIAMOND)}</button>
