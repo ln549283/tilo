@@ -253,3 +253,18 @@ body{height:100dvh;min-height:100dvh}
   .hint-button{margin-top:7px;margin-bottom:8px}
   .rules-return{margin-top:10px!important;margin-bottom:max(12px,env(safe-area-inset-bottom))!important}
 }
+
+
+/* 2026-09-20 — 6×6 symbol proportions */
+.board.size-6 .cell .piece{
+  width:44%;
+  height:44%;
+  max-width:31px;
+  max-height:31px;
+}
+.board.size-6 .cell .diamond{border-radius:5px}
+.board.size-6 .constraint{
+  width:23px;
+  height:23px;
+  font-size:13px;
+}
