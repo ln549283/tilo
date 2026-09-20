@@ -268,3 +268,55 @@ body{height:100dvh;min-height:100dvh}
   height:23px;
   font-size:13px;
 }
+
+
+/* 2026-09-20 — premium SVG game symbols */
+.piece-svg{
+  display:block;
+  object-fit:contain;
+  aspect-ratio:1 / 1;
+  flex:0 0 auto;
+  transform:none !important;
+  border-radius:0 !important;
+  background:none !important;
+  filter:drop-shadow(0 2px 3px rgba(55,42,112,.10));
+  user-select:none;
+  -webkit-user-drag:none;
+}
+.cell .piece-svg{
+  width:56%;
+  height:56%;
+  max-width:42px;
+  max-height:42px;
+}
+.board.size-6 .cell .piece-svg{
+  width:48%;
+  height:48%;
+  max-width:30px;
+  max-height:30px;
+}
+.symbol-button .piece-svg{
+  width:40px;
+  height:40px;
+  max-width:none;
+  max-height:none;
+}
+.home-mini-grid .piece-svg{
+  width:31px;
+  height:31px;
+}
+.game-context-help .piece-svg{
+  width:14px;
+  height:14px;
+  margin:0 2px;
+}
+.rule-copy .piece-svg{width:16px;height:16px}
+.demo-cell .piece-svg{width:28px;height:28px}
+.mini-demo .demo-cell .piece-svg{width:24px;height:24px}
+.link-demo .piece-svg{width:30px;height:30px}
+@media(max-height:780px){
+  .home-mini-grid .piece-svg{width:25px;height:25px}
+  .demo-cell .piece-svg{width:23px;height:23px}
+  .mini-demo .demo-cell .piece-svg{width:19px;height:19px}
+  .link-demo .piece-svg{width:24px;height:24px}
+}
