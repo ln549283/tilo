@@ -290,10 +290,10 @@ body{height:100dvh;min-height:100dvh}
   max-height:42px;
 }
 .board.size-6 .cell .piece-svg{
-  width:48%;
-  height:48%;
-  max-width:30px;
-  max-height:30px;
+  width:60%;
+  height:60%;
+  max-width:40px;
+  max-height:40px;
 }
 .symbol-button .piece-svg{
   width:40px;
