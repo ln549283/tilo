@@ -68,13 +68,13 @@ function playVictorySound(perfect:boolean){
 let gameStartedAt = Date.now();
 let hintsUsedThisGame = 0;
 let placementStreak = 0;
-function difficultyFor(n:number):Difficulty { if(n<=15)return 'Facile'; if(n<=35)return 'Moyen'; if(n<=55)return 'Difficile'; if(n<=69)return 'Extrême'; return 'Chrono'; }
+function difficultyFor(n:number):Difficulty { if(n<=10)return 'Facile'; if(n<=25)return 'Moyen'; if(n<=45)return 'Difficile'; if(n<=69)return 'Extrême'; return 'Chrono'; }
 function difficultyClass(n:number){ return `difficulty-${difficultyFor(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}`; }
 function nextDifficultyInfo(n:number){
   const steps = [
-    {last:15,next:'Moyen' as Difficulty},
-    {last:35,next:'Difficile' as Difficulty},
-    {last:55,next:'Extrême' as Difficulty},
+    {last:10,next:'Moyen' as Difficulty},
+    {last:25,next:'Difficile' as Difficulty},
+    {last:45,next:'Extrême' as Difficulty},
     {last:69,next:'Chrono' as Difficulty}
   ];
   const step=steps.find(s=>n<=s.last);
@@ -106,8 +106,8 @@ if ('serviceWorker' in navigator) {
 initializeAds();
 
 function symbol(value: number) {
-  if (value === CIRCLE) return '<span class="piece circle" aria-label="cercle violet"></span>';
-  if (value === DIAMOND) return '<span class="piece diamond" aria-label="losange vert"></span>';
+  if (value === CIRCLE) return '<img class="piece piece-svg circle" src="./symbols/circle.svg" alt="" aria-label="cercle violet" draggable="false" />';
+  if (value === DIAMOND) return '<img class="piece piece-svg diamond" src="./symbols/diamond.svg" alt="" aria-label="losange vert" draggable="false" />';
   return '';
 }
 
