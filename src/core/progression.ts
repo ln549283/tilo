@@ -10,9 +10,9 @@ const mode = (difficulty: BaseDifficulty, timed = false): LevelMode => ({
   difficulty,
   timed,
   timeLimitSeconds: timed
-    ? difficulty === 'Moyen' ? 180
+    ? difficulty === 'Moyen' ? 60
       : difficulty === 'Difficile' ? 150
-      : 120
+      : 240
     : undefined,
 });
 
