@@ -1,6 +1,7 @@
 import { EMPTY, CIRCLE, DIAMOND, cloneGrid, type Constraint, type FilledValue, type Grid, type Level } from './model';
 import { countSolutions } from './solver';
 import { gridIsValid } from './rules';
+import { getLevelMode } from './progression';
 
 class SeededRandom {
   private state: number;
@@ -54,24 +55,21 @@ type Spec = {
 };
 
 function specFor(level: number): Spec {
-  // Facile : uniquement 4×4. Le changement de taille marque clairement le passage en Moyen.
-  if (level <= 5) return { size: 4, clueRate: .58, constraints: 0, tier: 'intro', target: [5, 20] };
-  if (level <= 10) return { size: 4, clueRate: .46, constraints: 1, tier: 'easy', target: [8, 28] };
+  const { difficulty } = getLevelMode(level);
 
-  // Moyen : première 6×6, volontairement très guidée au départ.
-  if (level <= 17) return { size: 6, clueRate: .68, constraints: 2, tier: 'medium', target: [10, 30] };
-  if (level <= 25) return { size: 6, clueRate: .57, constraints: 3, tier: 'medium', target: [18, 42] };
+  if (difficulty === 'Facile') {
+    return { size: 4, clueRate: .52, constraints: level % 3 === 0 ? 1 : 0, tier: 'easy', target: [6, 28] };
+  }
 
-  // Difficile : 6×6 plus ouverte, davantage de croisements de règles.
-  if (level <= 35) return { size: 6, clueRate: .47, constraints: 3, tier: 'sparse', target: [30, 58] };
-  if (level <= 45) return { size: 6, clueRate: .39, constraints: 4, tier: 'sparse', target: [42, 74] };
+  if (difficulty === 'Moyen') {
+    return { size: 6, clueRate: .60, constraints: 3, tier: 'medium', target: [14, 44] };
+  }
 
-  // Extrême : candidats retenus selon leur coût réel de résolution.
-  if (level <= 57) return { size: 6, clueRate: .33, constraints: 4, tier: 'deep', target: [54, 100] };
-  if (level <= 69) return { size: 6, clueRate: .28, constraints: 4, tier: 'deep', target: [66, 130] };
+  if (difficulty === 'Difficile') {
+    return { size: 6, clueRate: .43, constraints: 4, tier: 'sparse', target: [34, 78] };
+  }
 
-  // Chrono : complexité proche d'Extrême ; le temps ajoute la pression.
-  return { size: 6, clueRate: .30, constraints: 4, tier: 'deep', target: [56, 120] };
+  return { size: 6, clueRate: .29, constraints: 4, tier: 'deep', target: [58, 132] };
 }
 
 function legalValues(grid: Grid, constraints: readonly Constraint[], r: number, c: number): FilledValue[] {
