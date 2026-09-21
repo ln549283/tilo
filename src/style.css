@@ -320,3 +320,22 @@ body{height:100dvh;min-height:100dvh}
   .mini-demo .demo-cell .piece-svg{width:19px;height:19px}
   .link-demo .piece-svg{width:24px;height:24px}
 }
+
+
+/* Chrono modifier */
+.chrono-timer{
+  align-self:center;
+  margin-top:7px;
+  padding:6px 12px;
+  border-radius:999px;
+  background:#fff4dc;
+  color:#9b6814;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.04em;
+  font-variant-numeric:tabular-nums;
+  box-shadow:0 4px 12px rgba(130,90,20,.06);
+}
+@media(max-height:780px){
+  .chrono-timer{margin-top:4px;padding:5px 10px;font-size:11px}
+}
