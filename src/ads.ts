@@ -32,3 +32,24 @@ export async function showRewardedHint(): Promise<boolean> {
     return false;
   }
 }
+
+
+const INTERSTITIAL_ANDROID_ID =
+  import.meta.env.VITE_ADMOB_INTERSTITIAL_ANDROID || 'ca-app-pub-4973119425605161/5890182509';
+
+export async function showInterstitialAd(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+
+  try {
+    await initializeAds();
+    await AdMob.prepareInterstitial({
+      adId: INTERSTITIAL_ANDROID_ID,
+      isTesting: import.meta.env.DEV,
+    });
+    await AdMob.showInterstitial();
+    return true;
+  } catch (error) {
+    console.warn('Interstitial ad unavailable', error);
+    return false;
+  }
+}
