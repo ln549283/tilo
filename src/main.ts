@@ -3,7 +3,8 @@ import { CIRCLE, DIAMOND, EMPTY, cloneGrid, type FilledValue, type Grid, type Le
 import { generateLevel } from './core/generator';
 import { findHint } from './core/solver';
 import { gridIsValid } from './core/rules';
-import { initializeAds, showRewardedHint } from './ads';
+import { initializeAds, showInterstitialAd, showRewardedHint } from './ads';
+import { getLevelMode, levelModeLabel, nextModeUnlock, type BaseDifficulty } from './core/progression';
 
 const STORAGE_LEVEL = 'keite-current-level';
 const STORAGE_TUTORIAL = 'keite-tutorial-seen';
@@ -26,8 +27,8 @@ let lastChanceUsed = false;
 let hintPosition: Position | null = null;
 let screen: 'home' | 'rules' | 'game' | 'stats' | 'settings' | 'about' = 'home';
 
-type Difficulty = 'Facile' | 'Moyen' | 'Difficile' | 'Extrême' | 'Chrono';
-type GameStat = { level:number; difficulty:Difficulty; errors:number; hints:number; seconds:number; date:string };
+type Difficulty = BaseDifficulty;
+type GameStat = { level:number; difficulty:Difficulty; timed:boolean; errors:number; hints:number; seconds:number; date:string };
 type StatsData = { games:GameStat[]; currentPerfectStreak:number; maxPerfectStreak:number };
 const STORAGE_STATS = 'keite-stats-v1';
 const STORAGE_SOUND = 'keite-sound-enabled';
@@ -68,26 +69,60 @@ function playVictorySound(perfect:boolean){
 let gameStartedAt = Date.now();
 let hintsUsedThisGame = 0;
 let placementStreak = 0;
-function difficultyFor(n:number):Difficulty { if(n<=10)return 'Facile'; if(n<=25)return 'Moyen'; if(n<=45)return 'Difficile'; if(n<=69)return 'Extrême'; return 'Chrono'; }
+let levelEnded = false;
+let timerHandle: number | null = null;
+let timerPausedAt: number | null = null;
+let pausedTotalMs = 0;
+const sessionStartedAt = Date.now();
+let winsSinceInterstitial = 0;
+let lastAdAt = 0;
+
+function difficultyFor(n:number):Difficulty { return getLevelMode(n).difficulty; }
 function difficultyClass(n:number){ return `difficulty-${difficultyFor(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}`; }
-function nextDifficultyInfo(n:number){
-  const steps = [
-    {last:10,next:'Moyen' as Difficulty},
-    {last:25,next:'Difficile' as Difficulty},
-    {last:45,next:'Extrême' as Difficulty},
-    {last:69,next:'Chrono' as Difficulty}
-  ];
-  const step=steps.find(s=>n<=s.last);
-  if(!step) return null;
-  const remaining=step.last-n;
-  return {next:step.next,remaining,text:remaining===0?`${step.next} au prochain niveau`:`${remaining} niveau${remaining>1?'x':''} avant ${step.next}`};
+function nextDifficultyInfo(n:number){ return nextModeUnlock(n); }
+
+function elapsedGameMs(){
+  const livePause = timerPausedAt ? Date.now() - timerPausedAt : 0;
+  return Math.max(0, Date.now() - gameStartedAt - pausedTotalMs - livePause);
+}
+function pauseLevelTimer(){ if(timerPausedAt===null) timerPausedAt=Date.now(); }
+function resumeLevelTimer(){ if(timerPausedAt!==null){pausedTotalMs+=Date.now()-timerPausedAt;timerPausedAt=null;} }
+function remainingSeconds(){
+  const mode=getLevelMode(levelNumber);
+  if(!mode.timed || !mode.timeLimitSeconds) return null;
+  return Math.max(0, Math.ceil(mode.timeLimitSeconds - elapsedGameMs()/1000));
+}
+function formatCountdown(seconds:number){const m=Math.floor(seconds/60),s=seconds%60;return `${m}:${String(s).padStart(2,'0')}`;}
+function stopTimerTicker(){if(timerHandle!==null){window.clearInterval(timerHandle);timerHandle=null;}}
+function startTimerTicker(){
+  stopTimerTicker();
+  const mode=getLevelMode(levelNumber);
+  if(!mode.timed) return;
+  const tick=()=>{
+    const remaining=remainingSeconds();
+    const el=document.querySelector<HTMLElement>('#chronoValue');
+    if(remaining!==null && el) el.textContent=`⚡ ${formatCountdown(remaining)}`;
+    if(remaining===0 && !levelEnded){levelEnded=true;stopTimerTicker();showTimeUpModal();}
+  };
+  tick();
+  timerHandle=window.setInterval(tick,250);
+}
+async function maybeShowInterstitial(){
+  winsSinceInterstitial++;
+  const now=Date.now();
+  const enoughSession=now-sessionStartedAt>=5*60*1000;
+  const enoughWins=winsSinceInterstitial>=4;
+  const enoughSpacing=!lastAdAt || now-lastAdAt>=3*60*1000;
+  if(!enoughSession || !enoughWins || !enoughSpacing) return;
+  const shown=await showInterstitialAd();
+  if(shown){winsSinceInterstitial=0;lastAdAt=Date.now();}
 }
 function readStats():StatsData { try { const v=JSON.parse(localStorage.getItem(STORAGE_STATS)||''); if(v?.games) return v; } catch {} return {games:[],currentPerfectStreak:0,maxPerfectStreak:0}; }
 function saveWinStat(){
   const s=readStats(); const perfect=errors===0;
   s.currentPerfectStreak=perfect?s.currentPerfectStreak+1:0;
   s.maxPerfectStreak=Math.max(s.maxPerfectStreak,s.currentPerfectStreak);
-  s.games.push({level:levelNumber,difficulty:difficultyFor(levelNumber),errors,hints:hintsUsedThisGame,seconds:Math.max(1,Math.round((Date.now()-gameStartedAt)/1000)),date:new Date().toISOString()});
+  s.games.push({level:levelNumber,difficulty:difficultyFor(levelNumber),timed:getLevelMode(levelNumber).timed,errors,hints:hintsUsedThisGame,seconds:Math.max(1,Math.round(elapsedGameMs()/1000)),date:new Date().toISOString()});
   localStorage.setItem(STORAGE_STATS,JSON.stringify(s));
   return s;
 }
@@ -133,7 +168,7 @@ function renderHome() {
         <div class="home-level-copy">
           <span class="home-progress-label">NIVEAU ACTUEL</span>
           <strong>${levelNumber}</strong>
-          <span class="home-difficulty ${difficultyClass(levelNumber)}"><i></i>${difficultyFor(levelNumber)}</span>
+          <span class="home-difficulty ${difficultyClass(levelNumber)}"><i></i>${levelModeLabel(levelNumber)}</span>
           ${nextDifficultyInfo(levelNumber)?`<small class="home-next-difficulty">${nextDifficultyInfo(levelNumber)!.text}</small>`:''}
         </div>
         <div class="home-mini-grid" aria-hidden="true">
@@ -160,7 +195,7 @@ function renderHome() {
     </main>`;
 
   document.querySelector('#playBtn')?.addEventListener('click', () => {
-    if (localStorage.getItem(STORAGE_TUTORIAL)) screen = 'game';
+    if (localStorage.getItem(STORAGE_TUTORIAL)) { resumeLevelTimer(); screen = 'game'; }
     else { rulesReturnScreen = 'game'; screen = 'rules'; }
     render();
   });
@@ -180,7 +215,7 @@ function renderAbout() {
     <img class="about-logo" src="./keite_logo_transparent.png?v=20260917-4" alt="KEITE — Keep It Even" />
     <div class="about-version">Version 1.0.0</div>
     <section class="about-card"><h2>À propos de KEITE</h2><p>KEITE est un jeu de logique minimaliste où chaque grille est un défi d’équilibre. Simple à comprendre, difficile à lâcher, il s’adresse à tous ceux qui aiment réfléchir et progresser à leur rythme.</p>
-      <div class="about-features"><span><b>∞</b> Une progression infinie</span><span><b>▥</b> 5 niveaux de difficulté</span><span><b>💡</b> Des casse-têtes variés</span></div>
+      <div class="about-features"><span><b>∞</b> Une progression infinie</span><span><b>▥</b> 4 difficultés + défis Chrono</span><span><b>💡</b> Des casse-têtes variés</span></div>
     </section>
     <section class="about-card developer-card"><span class="about-gamepad">🎮</span><div><b>Développé par<br>Nibylo Games</b><small>Des jeux simples. De grandes idées.</small></div></section>
     <button class="primary about-return" id="aboutReturn">← &nbsp; Retour à l’accueil</button>
@@ -216,9 +251,9 @@ function renderSettings() {
 function renderStats() {
   const s=readStats(), games=s.games, wins=games.length, perfect=games.filter(g=>g.errors===0).length;
   const hints=games.reduce((a,g)=>a+g.hints,0), avg=wins?Math.round(games.reduce((a,g)=>a+g.seconds,0)/wins):0;
-  const diffs:Difficulty[]=['Facile','Moyen','Difficile','Extrême','Chrono'];
+  const diffs:Difficulty[]=['Facile','Moyen','Difficile','Extrême'];
   const diffHtml=diffs.map(d=>{const n=games.filter(g=>g.difficulty===d).length;const p=wins?Math.round(n/wins*100):0;return `<div class="diff-stat"><i></i><b>${d}</b><strong>${n}</strong><small>${p} %</small></div>`}).join('');
-  const recent=[...games].reverse().slice(0,4).map(g=>`<div class="stat-row"><b>#${g.level}</b><span>${g.difficulty}</span><span class="success-pill">Réussi</span><span>${g.errors}</span><span>${g.hints}</span><span>${formatTime(g.seconds)}</span></div>`).join('');
+  const recent=[...games].reverse().slice(0,4).map(g=>`<div class="stat-row"><b>#${g.level}</b><span>${g.difficulty}${g.timed?' · Chrono':''}</span><span class="success-pill">Réussi</span><span>${g.errors}</span><span>${g.hints}</span><span>${formatTime(g.seconds)}</span></div>`).join('');
   app.innerHTML=`
   <main class="screen stats-screen">
     <header class="stats-header"><button class="ghost-icon" id="statsBack">‹</button><div><h2>Statistiques</h2><p>Votre progression en un coup d’œil !</p></div></header>
@@ -290,7 +325,7 @@ function renderRules() {
       <button class="primary rules-return" id="startBtn">${localStorage.getItem(STORAGE_TUTORIAL) ? 'Retour au jeu' : 'J’ai compris'}</button>
     </main>`;
 
-  const returnFromRules = () => { screen = rulesReturnScreen; render(); };
+  const returnFromRules = () => { screen = rulesReturnScreen; if(rulesReturnScreen==='game') resumeLevelTimer(); render(); };
   document.querySelector('#backBtn')?.addEventListener('click', returnFromRules);
   document.querySelector('#startBtn')?.addEventListener('click', () => {
     localStorage.setItem(STORAGE_TUTORIAL, '1');
@@ -335,7 +370,8 @@ function renderGame() {
           <button class="rules-mini" id="gameRulesBtn" aria-label="Règles">?</button>
         </div>
       </header>
-      <div class="game-objective difficulty-pill ${difficultyClass(levelNumber)}"><span></span>${difficultyFor(levelNumber)}</div>
+      <div class="game-objective difficulty-pill ${difficultyClass(levelNumber)}"><span></span>${levelModeLabel(levelNumber)}</div>
+      ${getLevelMode(levelNumber).timed?`<div class="chrono-timer" id="chronoValue">⚡ ${formatCountdown(remainingSeconds() ?? 0)}</div>`:''}
       ${placementStreak>=3?`<div class="placement-streak">Série ×${placementStreak}</div>`:''}
       ${renderContextHelp()}
       <section class="board-wrap"><div class="board size-${level.size}" style="--size:${level.size}">${cells}${constraintMarkup()}</div></section>
@@ -347,8 +383,9 @@ function renderGame() {
       <div id="toast" class="toast"></div>
     </main>`;
 
-  document.querySelector('#homeBtn')?.addEventListener('click', () => { screen = 'home'; render(); });
-  document.querySelector('#gameRulesBtn')?.addEventListener('click', () => { rulesReturnScreen = 'game'; screen = 'rules'; render(); });
+  startTimerTicker();
+  document.querySelector('#homeBtn')?.addEventListener('click', () => { pauseLevelTimer(); stopTimerTicker(); screen = 'home'; render(); });
+  document.querySelector('#gameRulesBtn')?.addEventListener('click', () => { pauseLevelTimer(); stopTimerTicker(); rulesReturnScreen = 'game'; screen = 'rules'; render(); });
   document.querySelectorAll<HTMLButtonElement>('.symbol-button').forEach(btn => btn.addEventListener('click', () => { selected = Number(btn.dataset.value) as FilledValue; renderGame(); }));
   document.querySelectorAll<HTMLButtonElement>('.cell:not(.fixed)').forEach(btn => btn.addEventListener('click', () => playCell(btn)));
   document.querySelector('#hintBtn')?.addEventListener('click', useHint);
@@ -376,15 +413,17 @@ function useHint() {
 function showToast(text: string) { const toast = document.querySelector<HTMLDivElement>('#toast'); if (!toast) return; toast.textContent = text; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3800); }
 
 function showThirdErrorModal() {
+  pauseLevelTimer(); stopTimerTicker();
   playSound('lose');
   const canOfferLastChance = !lastChanceUsed;
   const modal = document.createElement('div'); modal.className='modal-backdrop';
   modal.innerHTML=`<div class="modal-card"><div class="modal-symbol">!</div><span class="eyebrow">3 ERREURS</span><h3>${canOfferLastChance?'Besoin d’une dernière chance ?':'Cette tentative est terminée.'}</h3><p>${canOfferLastChance?'Regarde une courte publicité pour obtenir une erreur supplémentaire et continuer.':'Ta dernière chance a déjà été utilisée sur cette grille.'}</p>${canOfferLastChance?'<button class="reward-button" id="rewardBtn">▶ Obtenir une dernière chance</button>':''}<button class="secondary" id="restartBtn">Recommencer le niveau</button></div>`;
   document.body.appendChild(modal);
   document.querySelector('#restartBtn')?.addEventListener('click',()=>{modal.remove();restartCurrentLevel();});
-  if(canOfferLastChance) document.querySelector('#rewardBtn')?.addEventListener('click',async()=>{const btn=document.querySelector<HTMLButtonElement>('#rewardBtn')!;btn.disabled=true;btn.textContent='Chargement…';const rewarded=await showRewardedHint();if(!rewarded){btn.disabled=false;btn.textContent='Pub indisponible';return;}lastChanceUsed=true;errors=2;modal.remove();renderGame();showToast('Dernière chance activée : une erreur supplémentaire est permise.');});
+  if(canOfferLastChance) document.querySelector('#rewardBtn')?.addEventListener('click',async()=>{const btn=document.querySelector<HTMLButtonElement>('#rewardBtn')!;btn.disabled=true;btn.textContent='Chargement…';const rewarded=await showRewardedHint();if(!rewarded){btn.disabled=false;btn.textContent='Pub indisponible';return;}lastAdAt=Date.now();lastChanceUsed=true;errors=2;modal.remove();resumeLevelTimer();renderGame();showToast('Dernière chance activée : une erreur supplémentaire est permise.');});
 }
 function showWinModal(){
+  levelEnded=true; pauseLevelTimer(); stopTimerTicker();
   const perfect=errors===0;
   const stats=saveWinStat();
   const progress=nextDifficultyInfo(levelNumber);
@@ -405,9 +444,17 @@ function showWinModal(){
     <button class="primary" id="nextBtn">Niveau suivant</button>
   </div>`;
   document.body.appendChild(modal);
-  document.querySelector('#nextBtn')?.addEventListener('click',()=>{modal.remove();levelNumber++;localStorage.setItem(STORAGE_LEVEL,String(levelNumber));loadLevel(true);});
+  document.querySelector('#nextBtn')?.addEventListener('click',async()=>{const btn=document.querySelector<HTMLButtonElement>('#nextBtn')!;btn.disabled=true;await maybeShowInterstitial();modal.remove();levelNumber++;localStorage.setItem(STORAGE_LEVEL,String(levelNumber));loadLevel(true);});
+}
+function showTimeUpModal(){
+  pauseLevelTimer(); stopTimerTicker(); playSound('lose');
+  const modal=document.createElement('div'); modal.className='modal-backdrop';
+  modal.innerHTML=`<div class="modal-card"><div class="modal-symbol">⚡</div><span class="eyebrow">TEMPS ÉCOULÉ</span><h3>Le chrono a gagné cette manche.</h3><p>La grille change à chaque nouvelle tentative.</p><button class="primary" id="retryTimeBtn">Recommencer le niveau</button></div>`;
+  document.body.appendChild(modal);
+  document.querySelector('#retryTimeBtn')?.addEventListener('click',()=>{modal.remove();restartCurrentLevel();});
 }
 function newVariant(){variant=(variant+1+(Date.now()&0xffff))>>>0;}
-function restartCurrentLevel(){gameStartedAt=Date.now();hintsUsedThisGame=0;placementStreak=0;newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;renderGame();}
-function loadLevel(forceNew=false){gameStartedAt=Date.now();hintsUsedThisGame=0;placementStreak=0;if(forceNew)newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;screen='game';render();}
+function resetLevelRuntime(){gameStartedAt=Date.now();pausedTotalMs=0;timerPausedAt=null;levelEnded=false;hintsUsedThisGame=0;placementStreak=0;}
+function restartCurrentLevel(){stopTimerTicker();resetLevelRuntime();newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;renderGame();}
+function loadLevel(forceNew=false){stopTimerTicker();resetLevelRuntime();if(forceNew)newVariant();level=generateLevel(levelNumber,variant);grid=cloneGrid(level.initial);errors=0;hintsLeft=3;lastChanceUsed=false;hintPosition=null;selected=CIRCLE;screen='game';render();}
 render();
